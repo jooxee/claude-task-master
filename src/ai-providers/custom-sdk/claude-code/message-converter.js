@@ -120,16 +120,16 @@ export function convertToClaudeCodeMessages(prompt, mode) {
 		// Make the JSON instruction even more explicit
 		finalPrompt = `${finalPrompt}
 
-CRITICAL INSTRUCTION: You MUST respond with ONLY valid JSON. Follow these rules EXACTLY:
-1. Start your response with an opening brace {
-2. End your response with a closing brace }
-3. Do NOT include any text before the opening brace
-4. Do NOT include any text after the closing brace
-5. Do NOT use markdown code blocks or backticks
-6. Do NOT include explanations or commentary
-7. The ENTIRE response must be valid JSON that can be parsed with JSON.parse()
+КРИТИЧЕСКИ ВАЖНАЯ ИНСТРУКЦИЯ: Вы ДОЛЖНЫ отвечать ТОЛЬКО валидным JSON. Следуйте этим правилам ТОЧНО:
+1. Начните ответ с открывающей фигурной скобки {
+2. Закончите ответ закрывающей фигурной скобкой }
+3. НЕ включайте никакого текста перед открывающей скобкой
+4. НЕ включайте никакого текста после закрывающей скобки
+5. НЕ используйте markdown блоки кода или обратные кавычки
+6. НЕ включайте объяснения или комментарии
+7. ВЕСЬ ответ должен быть валидным JSON, который можно разобрать с помощью JSON.parse()
 
-Begin your response with { and end with }`;
+Начните ответ с { и закончите }`;
 	}
 
 	return {
