@@ -174,15 +174,15 @@ async function parsePRD(prdPath, tasksPath, numTasks, options = {}) {
 
 		// Research-specific enhancements to the system prompt
 		const researchPromptAddition = research
-			? `\nBefore breaking down the PRD into tasks, you will:
-1. Research and analyze the latest technologies, libraries, frameworks, and best practices that would be appropriate for this project
-2. Identify any potential technical challenges, security concerns, or scalability issues not explicitly mentioned in the PRD without discarding any explicit requirements or going overboard with complexity -- always aim to provide the most direct path to implementation, avoiding over-engineering or roundabout approaches
-3. Consider current industry standards and evolving trends relevant to this project (this step aims to solve LLM hallucinations and out of date information due to training data cutoff dates)
-4. Evaluate alternative implementation approaches and recommend the most efficient path
-5. Include specific library versions, helpful APIs, and concrete implementation guidance based on your research
-6. Always aim to provide the most direct path to implementation, avoiding over-engineering or roundabout approaches
+			? `\nПеред разбивкой PRD на задачи вы должны:
+1. Исследовать и проанализировать последние технологии, библиотеки, фреймворки и лучшие практики, которые подходят для этого проекта
+2. Выявить любые потенциальные технические проблемы, проблемы безопасности или масштабируемости, не упомянутые явно в PRD, не отбрасывая при этом явные требования и не переусложняя -- всегда стремитесь обеспечить наиболее прямой путь к реализации, избегая избыточного проектирования или окольных подходов
+3. Рассмотреть текущие отраслевые стандарты и развивающиеся тенденции, релевантные для этого проекта (этот шаг направлен на решение галлюцинаций LLM и устаревшей информации из-за даты обрезания обучающих данных)
+4. Оценить альтернативные подходы к реализации и рекомендовать наиболее эффективный путь
+5. Включить конкретные версии библиотек, полезные API и конкретное руководство по реализации на основе вашего исследования
+6. Всегда стремиться обеспечить наиболее прямой путь к реализации, избегая избыточного проектирования или окольных подходов
 
-Your task breakdown should incorporate this research, resulting in more detailed implementation guidance, more accurate dependency mapping, and more precise technology recommendations than would be possible from the PRD text alone, while maintaining all explicit requirements and best practices and all details and nuances of the PRD.`
+Ваша разбивка задач должна включать это исследование, что приведет к более детальному руководству по реализации, более точному сопоставлению зависимостей и более точным технологическим рекомендациям, чем это было бы возможно только на основе текста PRD, сохраняя при этом все явные требования и лучшие практики и все детали и нюансы PRD.`
 			: '';
 
 		// Base system prompt for PRD parsing
@@ -221,7 +221,7 @@ Your task breakdown should incorporate this research, resulting in more detailed
 
 		// Build user prompt with PRD content
 		const userPrompt = `Вот документ с требованиями к продукту (PRD), который нужно разбить примерно на ${numTasks} задач, начиная с ID ${nextId}:${research ? '\n\nНе забудьте тщательно изучить текущие лучшие практики и технологии перед разбивкой задач, чтобы предоставить конкретные, действенные детали реализации.' : ''}\n\n${prdContent}\n\n
-		Return your response in this format:
+		Верните ответ в этом формате:
 {
     "tasks": [
         {
