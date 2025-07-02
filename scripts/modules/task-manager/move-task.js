@@ -33,7 +33,7 @@ async function moveTask(
 
 	if (sourceIds.length !== destinationIds.length) {
 		throw new Error(
-			`Number of source IDs (${sourceIds.length}) must match number of destination IDs (${destinationIds.length})`
+			`Количество исходных ID (${sourceIds.length}) должно совпадать с количеством целевых ID (${destinationIds.length})`
 		);
 	}
 
@@ -57,7 +57,7 @@ async function moveTask(
 		}
 
 		return {
-			message: `Successfully moved ${sourceIds.length} tasks/subtasks`,
+			message: `Успешно перемещено ${sourceIds.length} задач/подзадач`,
 			moves: results
 		};
 	}
@@ -83,7 +83,7 @@ async function moveTask(
 		!Array.isArray(rawData[currentTag].tasks)
 	) {
 		throw new Error(
-			`Invalid tasks file or tag "${currentTag}" not found at ${tasksPath}`
+			`Неверный файл задач или тег "${currentTag}" не найден по адресу ${tasksPath}`
 		);
 	}
 
@@ -92,7 +92,7 @@ async function moveTask(
 
 	log(
 		'info',
-		`Moving task/subtask ${sourceId} to ${destinationId} (tag: ${currentTag})`
+		`Перемещение задачи/подзадачи ${sourceId} в ${destinationId} (тег: ${currentTag})`
 	);
 
 	// Parse source and destination IDs
@@ -144,11 +144,11 @@ function moveSubtaskToSubtask(tasks, sourceId, destinationId) {
 	const destParentTask = tasks.find((t) => t.id === destParentId);
 
 	if (!sourceParentTask) {
-		throw new Error(`Source parent task with ID ${sourceParentId} not found`);
+		throw new Error(`Исходная родительская задача с ID ${sourceParentId} не найдена`);
 	}
 	if (!destParentTask) {
 		throw new Error(
-			`Destination parent task with ID ${destParentId} not found`
+			`Целевая родительская задача с ID ${destParentId} не найдена`
 		);
 	}
 
@@ -165,7 +165,7 @@ function moveSubtaskToSubtask(tasks, sourceId, destinationId) {
 		(st) => st.id === sourceSubtaskId
 	);
 	if (sourceSubtaskIndex === -1) {
-		throw new Error(`Source subtask ${sourceId} not found`);
+		throw new Error(`Исходная подзадача ${sourceId} не найдена`);
 	}
 
 	const sourceSubtask = sourceParentTask.subtasks[sourceSubtaskIndex];
@@ -207,7 +207,7 @@ function moveSubtaskToSubtask(tasks, sourceId, destinationId) {
 	}
 
 	return {
-		message: `Moved subtask ${sourceId} to ${destinationId}`,
+		message: `Перемещена подзадача ${sourceId} в ${destinationId}`,
 		movedItem: sourceSubtask
 	};
 }
@@ -223,10 +223,10 @@ function moveSubtaskToTask(tasks, sourceId, destinationId) {
 	const sourceParentTask = tasks.find((t) => t.id === sourceParentId);
 
 	if (!sourceParentTask) {
-		throw new Error(`Source parent task with ID ${sourceParentId} not found`);
+		throw new Error(`Исходная родительская задача с ID ${sourceParentId} не найдена`);
 	}
 	if (!sourceParentTask.subtasks) {
-		throw new Error(`Source parent task ${sourceParentId} has no subtasks`);
+		throw new Error(`Исходная родительская задача ${sourceParentId} не имеет подзадач`);
 	}
 
 	// Find source subtask
@@ -234,7 +234,7 @@ function moveSubtaskToTask(tasks, sourceId, destinationId) {
 		(st) => st.id === sourceSubtaskId
 	);
 	if (sourceSubtaskIndex === -1) {
-		throw new Error(`Source subtask ${sourceId} not found`);
+		throw new Error(`Исходная подзадача ${sourceId} не найдена`);
 	}
 
 	const sourceSubtask = sourceParentTask.subtasks[sourceSubtaskIndex];
@@ -243,7 +243,7 @@ function moveSubtaskToTask(tasks, sourceId, destinationId) {
 	const existingDestTask = tasks.find((t) => t.id === destTaskId);
 	if (existingDestTask) {
 		throw new Error(
-			`Cannot move to existing task ID ${destTaskId}. Choose a different ID or use subtask destination.`
+			`Невозможно переместить на существующий ID задачи ${destTaskId}. Выберите другой ID или используйте целевую подзадачу.`
 		);
 	}
 
@@ -272,7 +272,7 @@ function moveSubtaskToTask(tasks, sourceId, destinationId) {
 	}
 
 	return {
-		message: `Converted subtask ${sourceId} to task ${destinationId}`,
+		message: `Подзадача ${sourceId} преобразована в задачу ${destinationId}`,
 		movedItem: newTask
 	};
 }
@@ -289,11 +289,11 @@ function moveTaskToSubtask(tasks, sourceId, destinationId) {
 	const destParentTask = tasks.find((t) => t.id === destParentId);
 
 	if (sourceTaskIndex === -1) {
-		throw new Error(`Source task with ID ${sourceTaskId} not found`);
+		throw new Error(`Исходная задача с ID ${sourceTaskId} не найдена`);
 	}
 	if (!destParentTask) {
 		throw new Error(
-			`Destination parent task with ID ${destParentId} not found`
+			`Целевая родительская задача с ID ${destParentId} не найдена`
 		);
 	}
 
@@ -335,7 +335,7 @@ function moveTaskToSubtask(tasks, sourceId, destinationId) {
 	tasks.splice(sourceTaskIndex, 1);
 
 	return {
-		message: `Converted task ${sourceId} to subtask ${destinationId}`,
+		message: `Задача ${sourceId} преобразована в подзадачу ${destinationId}`,
 		movedItem: newSubtask
 	};
 }
@@ -347,7 +347,7 @@ function moveTaskToTask(tasks, sourceId, destinationId) {
 	// Find source task
 	const sourceTaskIndex = tasks.findIndex((t) => t.id === sourceTaskId);
 	if (sourceTaskIndex === -1) {
-		throw new Error(`Source task with ID ${sourceTaskId} not found`);
+		throw new Error(`Исходная задача с ID ${sourceTaskId} не найдена`);
 	}
 
 	const sourceTask = tasks[sourceTaskIndex];
@@ -361,7 +361,7 @@ function moveTaskToTask(tasks, sourceId, destinationId) {
 
 		// For now, throw an error to avoid accidental overwrites
 		throw new Error(
-			`Task with ID ${destTaskId} already exists. Use a different destination ID.`
+			`Задача с ID ${destTaskId} уже существует. Используйте другой целевой ID.`
 		);
 	} else {
 		// Destination doesn't exist - create new task ID
@@ -477,10 +477,10 @@ function moveTaskToNewId(tasks, sourceTaskIndex, sourceTask, destTaskId) {
 		tasks.push(movedTask);
 	}
 
-	log('info', `Moved task ${sourceTask.id} to new ID ${destTaskId}`);
+	log('info', `Задача ${sourceTask.id} перемещена на новый ID ${destTaskId}`);
 
 	return {
-		message: `Moved task ${sourceTask.id} to new ID ${destTaskId}`,
+		message: `Задача ${sourceTask.id} перемещена на новый ID ${destTaskId}`,
 		movedItem: movedTask
 	};
 }

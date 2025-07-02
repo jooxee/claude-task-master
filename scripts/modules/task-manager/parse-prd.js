@@ -100,7 +100,7 @@ async function parsePRD(prdPath, tasksPath, numTasks, options = {}) {
 	};
 
 	report(
-		`Parsing PRD file: ${prdPath}, Force: ${force}, Append: ${append}, Research: ${research}`
+		`Разбор файла PRD: ${prdPath}, Принудительно: ${force}, Добавить: ${append}, Исследование: ${research}`
 	);
 
 	let existingTasks = [];
@@ -136,13 +136,13 @@ async function parsePRD(prdPath, tasksPath, numTasks, options = {}) {
 		if (hasExistingTasksInTag) {
 			if (append) {
 				report(
-					`Append mode enabled. Found ${existingTasks.length} existing tasks in tag '${targetTag}'. Next ID will be ${nextId}.`,
+					`Режим добавления включен. Найдено ${existingTasks.length} существующих задач в теге '${targetTag}'. Следующий ID будет ${nextId}.`,
 					'info'
 				);
 			} else if (!force) {
 				// Not appending and not forcing overwrite, and there are existing tasks in the target tag
 				const overwriteError = new Error(
-					`Tag '${targetTag}' already contains ${existingTasks.length} tasks. Use --force to overwrite or --append to add to existing tasks.`
+					`Тег '${targetTag}' уже содержит ${existingTasks.length} задач. Используйте --force для перезаписи или --append для добавления к существующим задачам.`
 				);
 				report(overwriteError.message, 'error');
 				if (outputFormat === 'text') {
@@ -154,22 +154,22 @@ async function parsePRD(prdPath, tasksPath, numTasks, options = {}) {
 			} else {
 				// Force overwrite is true
 				report(
-					`Force flag enabled. Overwriting existing tasks in tag '${targetTag}'.`,
+					`Флаг force включен. Перезапись существующих задач в теге '${targetTag}'.`,
 					'info'
 				);
 			}
 		} else {
 			// No existing tasks in target tag, proceed without confirmation
 			report(
-				`Tag '${targetTag}' is empty or doesn't exist. Creating/updating tag with new tasks.`,
+				`Тег '${targetTag}' пуст или не существует. Создание/обновление тега новыми задачами.`,
 				'info'
 			);
 		}
 
-		report(`Reading PRD content from ${prdPath}`, 'info');
+		report(`Чтение содержимого PRD из ${prdPath}`, 'info');
 		const prdContent = fs.readFileSync(prdPath, 'utf8');
 		if (!prdContent) {
-			throw new Error(`Input file ${prdPath} is empty or could not be read.`);
+			throw new Error(`Входной файл ${prdPath} пуст или не может быть прочитан.`);
 		}
 
 		// Research-specific enhancements to the system prompt
@@ -186,42 +186,41 @@ Your task breakdown should incorporate this research, resulting in more detailed
 			: '';
 
 		// Base system prompt for PRD parsing
-		const systemPrompt = `You are an AI assistant specialized in analyzing Product Requirements Documents (PRDs) and generating a structured, logically ordered, dependency-aware and sequenced list of development tasks in JSON format.${researchPromptAddition}
+		const systemPrompt = `Вы — AI-ассистент, специализирующийся на анализе документов с требованиями к продукту (PRD) и генерации структурированного, логически упорядоченного, учитывающего зависимости и последовательного списка задач разработки в формате JSON.${researchPromptAddition}
 
-Analyze the provided PRD content and generate approximately ${numTasks} top-level development tasks. If the complexity or the level of detail of the PRD is high, generate more tasks relative to the complexity of the PRD
-Each task should represent a logical unit of work needed to implement the requirements and focus on the most direct and effective way to implement the requirements without unnecessary complexity or overengineering. Include pseudo-code, implementation details, and test strategy for each task. Find the most up to date information to implement each task.
-Assign sequential IDs starting from ${nextId}. Infer title, description, details, and test strategy for each task based *only* on the PRD content.
-Set status to 'pending', dependencies to an empty array [], and priority to 'medium' initially for all tasks.
-Respond ONLY with a valid JSON object containing a single key "tasks", where the value is an array of task objects adhering to the provided Zod schema. Do not include any explanation or markdown formatting.
+Проанализируйте предоставленное содержимое PRD и сгенерируйте примерно ${numTasks} задач верхнего уровня. Если сложность или уровень детализации PRD высоки, сгенерируйте больше задач относительно сложности PRD
+Каждая задача должна представлять собой логическую единицу работы, необходимую для реализации требований, и сосредоточиться на наиболее прямом и эффективном способе реализации требований без излишней сложности или избыточного проектирования. Включите псевдокод, детали реализации и стратегию тестирования для каждой задачи. Найдите самую актуальную информацию для реализации каждой задачи.
+Назначьте последовательные ID, начиная с ${nextId}. Выведите заголовок, описание, детали и стратегию тестирования для каждой задачи, основываясь *только* на содержимом PRD.
+Установите статус 'pending', зависимости в пустой массив [], и приоритет 'medium' изначально для всех задач.
+Отвечайте ТОЛЬКО валидным объектом JSON, содержащим один ключ "tasks", где значением является массив объектов задач, соответствующих предоставленной схеме Zod. Не включайте никаких объяснений или форматирования markdown.
 
-Each task should follow this JSON structure:
+Каждая задача должна соответствовать следующей структуре JSON:
 {
 	"id": number,
 	"title": string,
 	"description": string,
 	"status": "pending",
-	"dependencies": number[] (IDs of tasks this depends on),
+	"dependencies": number[],
 	"priority": "high" | "medium" | "low",
 	"details": string (implementation details),
 	"testStrategy": string (validation approach)
 }
 
-Guidelines:
-1. Unless complexity warrants otherwise, create exactly ${numTasks} tasks, numbered sequentially starting from ${nextId}
-2. Each task should be atomic and focused on a single responsibility following the most up to date best practices and standards
-3. Order tasks logically - consider dependencies and implementation sequence
-4. Early tasks should focus on setup, core functionality first, then advanced features
-5. Include clear validation/testing approach for each task
-6. Set appropriate dependency IDs (a task can only depend on tasks with lower IDs, potentially including existing tasks with IDs less than ${nextId} if applicable)
-7. Assign priority (high/medium/low) based on criticality and dependency order
-8. Include detailed implementation guidance in the "details" field${research ? ', with specific libraries and version recommendations based on your research' : ''}
-9. If the PRD contains specific requirements for libraries, database schemas, frameworks, tech stacks, or any other implementation details, STRICTLY ADHERE to these requirements in your task breakdown and do not discard them under any circumstance
-10. Focus on filling in any gaps left by the PRD or areas that aren't fully specified, while preserving all explicit requirements
-11. Always aim to provide the most direct path to implementation, avoiding over-engineering or roundabout approaches${research ? '\n12. For each task, include specific, actionable guidance based on current industry standards and best practices discovered through research' : ''}`;
+Рекомендации:
+1. Если сложность не требует иного, создайте ровно ${numTasks} задач, пронумерованных последовательно, начиная с ${nextId}
+2. Каждая задача должна быть атомарной и сосредоточенной на одной обязанности, следуя самым актуальным лучшим практикам и стандартам
+3. Упорядочивайте задачи логически — учитывайте зависимости и последовательность реализации
+4. Ранние задачи должны быть сосредоточены на настройке, основной функциональности, затем на расширенных функциях
+5. Включите четкий подход к проверке/тестированию для каждой задачи
+6. Установите соответствующие ID зависимостей (задача может зависеть только от задач с меньшими ID, потенциально включая существующие задачи с ID меньше ${nextId}, если применимо)
+7. Назначьте приоритет (высокий/средний/низкий) на основе критичности и порядка зависимостей
+8. Включите подробное руководство по реализации в поле "details"${research ? ', с конкретными библиотеками и рекомендациями по версиям на основе вашего исследования' : ''}
+9. Если PRD содержит конкретные требования к библиотекам, схемам баз данных, фреймворкам, технологическим стекам или любым другим деталям реализации, СТРОГО ПРИДЕРЖИВАЙТЕСЬ этих требований в вашей разбивке задач и ни при каких обстоятельствах не отбрасывайте их
+10. Сосредоточьтесь на заполнении любых пробелов, оставленных PRD, или областей, которые не полностью специфицированы, сохраняя при этом все явные требования
+11. Всегда стремитесь предоставить наиболее прямой путь к реализации, избегая избыточного проектирования или окольных подходов${research ? '\n12. Для каждой задачи включите конкретное, действенное руководство, основанное на текущих отраслевых стандартах и лучших практиках, обнаруженных в ходе исследования' : ''}`;
 
 		// Build user prompt with PRD content
-		const userPrompt = `Here's the Product Requirements Document (PRD) to break down into approximately ${numTasks} tasks, starting IDs from ${nextId}:${research ? '\n\nRemember to thoroughly research current best practices and technologies before task breakdown to provide specific, actionable implementation details.' : ''}\n\n${prdContent}\n\n
-
+		const userPrompt = `Вот документ с требованиями к продукту (PRD), который нужно разбить примерно на ${numTasks} задач, начиная с ID ${nextId}:${research ? '\n\nНе забудьте тщательно изучить текущие лучшие практики и технологии перед разбивкой задач, чтобы предоставить конкретные, действенные детали реализации.' : ''}\n\n${prdContent}\n\n
 		Return your response in this format:
 {
     "tasks": [
@@ -243,7 +242,7 @@ Guidelines:
 
 		// Call the unified AI service
 		report(
-			`Calling AI service to generate tasks from PRD${research ? ' with research-backed analysis' : ''}...`,
+			`Вызов AI-сервиса для генерации задач из PRD${research ? ' с анализом на основе исследований' : ''}...`,
 			'info'
 		);
 
@@ -266,7 +265,7 @@ Guidelines:
 			fs.mkdirSync(tasksDir, { recursive: true });
 		}
 		logFn.success(
-			`Successfully parsed PRD via AI service${research ? ' with research-backed analysis' : ''}.`
+			`PRD успешно разобран с помощью AI-сервиса${research ? ' с анализом на основе исследований' : ''}.`
 		);
 
 		// Validate and Process Tasks
@@ -294,10 +293,10 @@ Guidelines:
 
 		if (!generatedData || !Array.isArray(generatedData.tasks)) {
 			logFn.error(
-				`Internal Error: generateObjectService returned unexpected data structure: ${JSON.stringify(generatedData)}`
+				`Внутренняя ошибка: generateObjectService вернул неожиданную структуру данных: ${JSON.stringify(generatedData)}`
 			);
 			throw new Error(
-				'AI service returned unexpected data structure after validation.'
+				'AI-сервис вернул неожиданную структуру данных после валидации.'
 			);
 		}
 
@@ -364,7 +363,7 @@ Guidelines:
 		// Write the complete data structure back to the file
 		fs.writeFileSync(tasksPath, JSON.stringify(outputData, null, 2));
 		report(
-			`Successfully ${append ? 'appended' : 'generated'} ${processedNewTasks.length} tasks in ${tasksPath}${research ? ' with research-backed analysis' : ''}`,
+			`Успешно ${append ? 'добавлено' : 'сгенерировано'} ${processedNewTasks.length} задач в ${tasksPath}${research ? ' с анализом на основе исследований' : ''}`,
 			'success'
 		);
 
@@ -376,7 +375,7 @@ Guidelines:
 			console.log(
 				boxen(
 					chalk.green(
-						`Successfully generated ${processedNewTasks.length} new tasks${research ? ' with research-backed analysis' : ''}. Total tasks in ${tasksPath}: ${finalTasks.length}`
+						`Успешно сгенерировано ${processedNewTasks.length} новых задач${research ? ' с анализом на основе исследований' : ''}. Всего задач в ${tasksPath}: ${finalTasks.length}`
 					),
 					{ padding: 1, borderColor: 'green', borderStyle: 'round' }
 				)
@@ -384,10 +383,10 @@ Guidelines:
 
 			console.log(
 				boxen(
-					chalk.white.bold('Next Steps:') +
+					chalk.white.bold('Следующие шаги:') +
 						'\n\n' +
-						`${chalk.cyan('1.')} Run ${chalk.yellow('task-master list')} to view all tasks\n` +
-						`${chalk.cyan('2.')} Run ${chalk.yellow('task-master expand --id=<id>')} to break down a task into subtasks`,
+						`${chalk.cyan('1.')} Выполните ${chalk.yellow('task-master list')}, чтобы просмотреть все задачи\n` +
+						`${chalk.cyan('2.')} Выполните ${chalk.yellow('task-master expand --id=<id>')}, чтобы разбить задачу на подзадачи`,
 					{
 						padding: 1,
 						borderColor: 'cyan',
@@ -410,11 +409,11 @@ Guidelines:
 			tagInfo: aiServiceResponse?.tagInfo
 		};
 	} catch (error) {
-		report(`Error parsing PRD: ${error.message}`, 'error');
+		report(`Ошибка разбора PRD: ${error.message}`, 'error');
 
 		// Only show error UI for text output (CLI)
 		if (outputFormat === 'text') {
-			console.error(chalk.red(`Error: ${error.message}`));
+			console.error(chalk.red(`Ошибка: ${error.message}`));
 
 			if (getDebugFlag(projectRoot)) {
 				// Use projectRoot for debug flag check

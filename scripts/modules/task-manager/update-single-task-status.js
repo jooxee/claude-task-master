@@ -20,8 +20,8 @@ async function updateSingleTaskStatus(
 ) {
 	if (!isValidTaskStatus(newStatus)) {
 		throw new Error(
-			`Error: Invalid status value: ${newStatus}. Use one of: ${TASK_STATUS_OPTIONS.join(', ')}`
-		);
+				`Ошибка: Неверное значение статуса: ${newStatus}. Используйте одно из: ${TASK_STATUS_OPTIONS.join(', ')}`
+			);
 	}
 
 	// Check if it's a subtask (e.g., "1.2")
@@ -33,18 +33,18 @@ async function updateSingleTaskStatus(
 		// Find the parent task
 		const parentTask = data.tasks.find((t) => t.id === parentId);
 		if (!parentTask) {
-			throw new Error(`Parent task ${parentId} not found`);
+			throw new Error(`Родительская задача ${parentId} не найдена`);
 		}
 
 		// Find the subtask
 		if (!parentTask.subtasks) {
-			throw new Error(`Parent task ${parentId} has no subtasks`);
+			throw new Error(`Родительская задача ${parentId} не имеет подзадач`);
 		}
 
 		const subtask = parentTask.subtasks.find((st) => st.id === subtaskId);
 		if (!subtask) {
 			throw new Error(
-				`Subtask ${subtaskId} not found in parent task ${parentId}`
+				`Подзадача ${subtaskId} не найдена в родительской задаче ${parentId}`
 			);
 		}
 
@@ -54,7 +54,7 @@ async function updateSingleTaskStatus(
 
 		log(
 			'info',
-			`Updated subtask ${parentId}.${subtaskId} status from '${oldStatus}' to '${newStatus}'`
+			`Статус подзадачи ${parentId}.${subtaskId} обновлен с '${oldStatus}' на '${newStatus}'`
 		);
 
 		// Check if all subtasks are done (if setting to 'done')
@@ -76,12 +76,12 @@ async function updateSingleTaskStatus(
 				if (showUi) {
 					console.log(
 						chalk.yellow(
-							`All subtasks of parent task ${parentId} are now marked as done.`
+							`Все подзадачи родительской задачи ${parentId} теперь отмечены как выполненные.`
 						)
 					);
 					console.log(
 						chalk.yellow(
-							`Consider updating the parent task status with: task-master set-status --id=${parentId} --status=done`
+							`Рассмотрите возможность обновления статуса родительской задачи с помощью: task-master set-status --id=${parentId} --status=done`
 						)
 					);
 				}
@@ -93,7 +93,7 @@ async function updateSingleTaskStatus(
 		const task = data.tasks.find((t) => t.id === taskId);
 
 		if (!task) {
-			throw new Error(`Task ${taskId} not found`);
+			throw new Error(`Задача ${taskId} не найдена`);
 		}
 
 		// Update the task status
@@ -102,7 +102,7 @@ async function updateSingleTaskStatus(
 
 		log(
 			'info',
-			`Updated task ${taskId} status from '${oldStatus}' to '${newStatus}'`
+			`Статус задачи ${taskId} обновлен с '${oldStatus}' на '${newStatus}'`
 		);
 
 		// If marking as done, also mark all subtasks as done
@@ -119,7 +119,7 @@ async function updateSingleTaskStatus(
 			if (pendingSubtasks.length > 0) {
 				log(
 					'info',
-					`Also marking ${pendingSubtasks.length} subtasks as '${newStatus}'`
+					`Также отмечаем ${pendingSubtasks.length} подзадач как '${newStatus}'`
 				);
 
 				pendingSubtasks.forEach((subtask) => {

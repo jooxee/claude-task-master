@@ -20,10 +20,10 @@ function generateTaskFiles(tasksPath, outputDir, options = {}) {
 
 		// 1. Read the raw data structure, ensuring we have all tags.
 		// We call readJSON without a specific tag to get the resolved default view,
-		// which correctly contains the full structure in `_rawTaggedData`.
+		// which correctly contains the full structure in "_rawTaggedData".
 		const resolvedData = readJSON(tasksPath, options.projectRoot);
 		if (!resolvedData) {
-			throw new Error(`Could not read or parse tasks file: ${tasksPath}`);
+			throw new Error("Не удалось прочитать или разобрать файл задач: ${tasksPath}");
 		}
 		// Prioritize the _rawTaggedData if it exists, otherwise use the data as is.
 		const rawData = resolvedData._rawTaggedData || resolvedData;
@@ -34,7 +34,7 @@ function generateTaskFiles(tasksPath, outputDir, options = {}) {
 
 		if (!tagData || !tagData.tasks) {
 			throw new Error(
-				`Tag '${targetTag}' not found or has no tasks in the data.`
+				"Тег '${targetTag}' не найден или не содержит задач в данных."
 			);
 		}
 		const tasksForGeneration = tagData.tasks;
@@ -46,7 +46,7 @@ function generateTaskFiles(tasksPath, outputDir, options = {}) {
 
 		log(
 			'info',
-			`Preparing to regenerate ${tasksForGeneration.length} task files for tag '${targetTag}'`
+			"Подготовка к повторной генерации ${tasksForGeneration.length} файлов задач для тега '${targetTag}'"
 		);
 
 		// 3. Validate dependencies using the FULL, raw data structure to prevent data loss.
@@ -61,7 +61,7 @@ function generateTaskFiles(tasksPath, outputDir, options = {}) {
 		const validTaskIds = allTasksInTag.map((task) => task.id);
 
 		// Cleanup orphaned task files
-		log('info', 'Checking for orphaned task files to clean up...');
+		log('info', 'Проверка на наличие бесхозных файлов задач для очистки...');
 		try {
 			const files = fs.readdirSync(outputDir);
 			// Tag-aware file patterns: master -> task_001.txt, other tags -> task_001_tagname.txt
@@ -94,49 +94,49 @@ function generateTaskFiles(tasksPath, outputDir, options = {}) {
 			if (orphanedFiles.length > 0) {
 				log(
 					'info',
-					`Found ${orphanedFiles.length} orphaned task files to remove for tag '${targetTag}'`
+					"Найдено ${orphanedFiles.length} бесхозных файлов задач для удаления для тега '${targetTag}'"
 				);
 				orphanedFiles.forEach((file) => {
 					const filePath = path.join(outputDir, file);
 					fs.unlinkSync(filePath);
 				});
 			} else {
-				log('info', 'No orphaned task files found.');
+				log('info', 'Бесхозные файлы задач не найдены.');
 			}
 		} catch (err) {
-			log('warn', `Error cleaning up orphaned task files: ${err.message}`);
+			log('warn', "Ошибка при очистке бесхозных файлов задач: ${err.message}");
 		}
 
 		// Generate task files for the target tag
-		log('info', `Generating individual task files for tag '${targetTag}'...`);
+		log('info', "Генерация отдельных файлов задач для тега '${targetTag}'...");
 		tasksForGeneration.forEach((task) => {
 			// Tag-aware file naming: master -> task_001.txt, other tags -> task_001_tagname.txt
 			const taskFileName =
 				targetTag === 'master'
-					? `task_${task.id.toString().padStart(3, '0')}.txt`
-					: `task_${task.id.toString().padStart(3, '0')}_${targetTag}.txt`;
+					? "task_${task.id.toString().padStart(3, '0')}.txt"
+					: "task_${task.id.toString().padStart(3, '0')}_${targetTag}.txt";
 
 			const taskPath = path.join(outputDir, taskFileName);
 
-			let content = `# Task ID: ${task.id}\n`;
-			content += `# Title: ${task.title}\n`;
-			content += `# Status: ${task.status || 'pending'}\n`;
+			let content = "# ID задачи: ${task.id}\n";
+			content += "# Заголовок: ${task.title}\n";
+			content += "# Статус: ${task.status || 'pending'}\n";
 
 			if (task.dependencies && task.dependencies.length > 0) {
-				content += `# Dependencies: ${formatDependenciesWithStatus(task.dependencies, allTasksInTag, false)}\n`;
+				content += "# Зависимости: ${formatDependenciesWithStatus(task.dependencies, allTasksInTag, false)}\n";
 			} else {
-				content += '# Dependencies: None\n';
+				content += '# Зависимости: Нет\n';
 			}
 
-			content += `# Priority: ${task.priority || 'medium'}\n`;
-			content += `# Description: ${task.description || ''}\n`;
-			content += '# Details:\n';
+			content += "# Приоритет: ${task.priority || 'medium'}\n";
+			content += "# Описание: ${task.description || ''}\n";
+			content += '# Детали:\n';
 			content += (task.details || '')
 				.split('\n')
 				.map((line) => line)
 				.join('\n');
 			content += '\n\n';
-			content += '# Test Strategy:\n';
+			content += '# Стратегия тестирования:\n';
 			content += (task.testStrategy || '')
 				.split('\n')
 				.map((line) => line)
@@ -144,23 +144,23 @@ function generateTaskFiles(tasksPath, outputDir, options = {}) {
 			content += '\n';
 
 			if (task.subtasks && task.subtasks.length > 0) {
-				content += '\n# Subtasks:\n';
+				content += '\n# Подзадачи:\n';
 				task.subtasks.forEach((subtask) => {
-					content += `## ${subtask.id}. ${subtask.title} [${subtask.status || 'pending'}]\n`;
+					content += "## ${subtask.id}. ${subtask.title} [${subtask.status || 'pending'}]\n";
 					if (subtask.dependencies && subtask.dependencies.length > 0) {
 						const subtaskDeps = subtask.dependencies
 							.map((depId) =>
 								typeof depId === 'number'
-									? `${task.id}.${depId}`
+									? "${task.id}.${depId}"
 									: depId.toString()
 							)
 							.join(', ');
-						content += `### Dependencies: ${subtaskDeps}\n`;
+						content += "### Зависимости: ${subtaskDeps}\n";
 					} else {
-						content += '### Dependencies: None\n';
+						content += '### Зависимости: Нет\n';
 					}
-					content += `### Description: ${subtask.description || ''}\n`;
-					content += '### Details:\n';
+					content += "### Описание: ${subtask.description || ''}\n";
+					content += '### Детали:\n';
 					content += (subtask.details || '')
 						.split('\n')
 						.map((line) => line)
@@ -174,7 +174,7 @@ function generateTaskFiles(tasksPath, outputDir, options = {}) {
 
 		log(
 			'success',
-			`All ${tasksForGeneration.length} tasks for tag '${targetTag}' have been generated into '${outputDir}'.`
+			"Все ${tasksForGeneration.length} задач для тега '${targetTag}' были сгенерированы в '${outputDir}'."
 		);
 
 		if (isMcpMode) {
@@ -185,9 +185,9 @@ function generateTaskFiles(tasksPath, outputDir, options = {}) {
 			};
 		}
 	} catch (error) {
-		log('error', `Error generating task files: ${error.message}`);
+		log('error', "Ошибка при генерации файлов задач: ${error.message}");
 		if (!options?.mcpLog) {
-			console.error(chalk.red(`Error generating task files: ${error.message}`));
+			console.error(chalk.red("Ошибка при генерации файлов задач: ${error.message}"));
 			if (getDebugFlag()) {
 				console.error(error);
 			}

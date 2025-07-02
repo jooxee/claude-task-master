@@ -2,7 +2,7 @@ import path from 'path';
 import chalk from 'chalk';
 import boxen from 'boxen';
 import Table from 'cli-table3';
-import { z } from 'zod'; // Keep Zod for post-parsing validation
+import { z } from 'zod'; // Zod оставляем для валидации после парсинга
 
 import {
 	log as consoleLog,
@@ -65,16 +65,16 @@ function parseUpdatedTasksFromText(text, expectedCount, logFn, isMCP) {
 
 	report(
 		'info',
-		'Attempting to parse updated tasks array from text response...'
+		'Попытка разобрать массив обновленных задач из текстового ответа...'
 	);
 	if (!text || text.trim() === '')
-		throw new Error('AI response text is empty.');
+		throw new Error('Текст ответа ИИ пуст.');
 
 	let cleanedResponse = text.trim();
 	const originalResponseForDebug = cleanedResponse;
-	let parseMethodUsed = 'raw'; // Track which method worked
+	let parseMethodUsed = 'raw'; // Отслеживаем, какой метод сработал
 
-	// --- NEW Step 1: Try extracting between [] first ---
+	// --- НОВЫЙ Шаг 1: Сначала пытаемся извлечь содержимое между [] ---
 	const firstBracketIndex = cleanedResponse.indexOf('[');
 	const lastBracketIndex = cleanedResponse.lastIndexOf(']');
 	let potentialJsonFromArray = null;
@@ -84,9 +84,9 @@ function parseUpdatedTasksFromText(text, expectedCount, logFn, isMCP) {
 			firstBracketIndex,
 			lastBracketIndex + 1
 		);
-		// Basic check to ensure it's not just "[]" or malformed
+		// Базовая проверка, чтобы убедиться, что это не просто "[]" или некорректный формат
 		if (potentialJsonFromArray.length <= 2) {
-			potentialJsonFromArray = null; // Ignore empty array
+			potentialJsonFromArray = null; // Игнорируем пустой массив
 		}
 	}
 
@@ -94,35 +94,35 @@ function parseUpdatedTasksFromText(text, expectedCount, logFn, isMCP) {
 	if (potentialJsonFromArray) {
 		try {
 			const testParse = JSON.parse(potentialJsonFromArray);
-			// It worked! Use this as the primary cleaned response.
+			// Сработало! Используем это как основной очищенный ответ.
 			cleanedResponse = potentialJsonFromArray;
 			parseMethodUsed = 'brackets';
 		} catch (e) {
 			report(
 				'info',
-				'Content between [] looked promising but failed initial parse. Proceeding to other methods.'
+				'Содержимое между [] выглядело многообещающе, но не прошло первичный разбор. Переход к другим методам.'
 			);
-			// Reset cleanedResponse to original if bracket parsing failed
+			// Сбрасываем cleanedResponse к исходному, если парсинг скобок не удался
 			cleanedResponse = originalResponseForDebug;
 		}
 	}
 
-	// --- Step 2: If bracket parsing didn't work or wasn't applicable, try code block extraction ---
+	// --- Шаг 2: Если парсинг скобок не сработал или неприменим, пытаемся извлечь блок кода ---
 	if (parseMethodUsed === 'raw') {
-		// Only look for ```json blocks now
+		// Ищем только блоки ```json
 		const codeBlockMatch = cleanedResponse.match(
-			/```json\s*([\s\S]*?)\s*```/i // Only match ```json
+			/```json\s*([\s\S]*?)\s*```/i // Ищем только ```json
 		);
 		if (codeBlockMatch) {
 			cleanedResponse = codeBlockMatch[1].trim();
 			parseMethodUsed = 'codeblock';
-			report('info', 'Extracted JSON content from JSON Markdown code block.');
+			report('info', 'Извлечено содержимое JSON из блока кода Markdown.');
 		} else {
-			report('info', 'No JSON code block found.');
-			// --- Step 3: If code block failed, try stripping prefixes ---
+			report('info', 'Блок кода JSON не найден.');
+			// --- Шаг 3: Если извлечение блока кода не удалось, пытаемся удалить префиксы ---
 			const commonPrefixes = [
 				'json\n',
-				'javascript\n', // Keep checking common prefixes just in case
+				'javascript\n', // Продолжаем проверять общие префиксы на всякий случай
 				'python\n',
 				'here are the updated tasks:',
 				'here is the updated json:',
@@ -136,7 +136,7 @@ function parseUpdatedTasksFromText(text, expectedCount, logFn, isMCP) {
 				if (cleanedResponse.toLowerCase().startsWith(prefix)) {
 					cleanedResponse = cleanedResponse.substring(prefix.length).trim();
 					parseMethodUsed = 'prefix';
-					report('info', `Stripped prefix: "${prefix.trim()}"`);
+					report('info', `Удален префикс: "${prefix.trim()}"`);
 					prefixFound = true;
 					break;
 				}
@@ -144,68 +144,68 @@ function parseUpdatedTasksFromText(text, expectedCount, logFn, isMCP) {
 			if (!prefixFound) {
 				report(
 					'warn',
-					'Response does not appear to contain [], JSON code block, or known prefix. Attempting raw parse.'
+					'Ответ, похоже, не содержит [], блока кода JSON или известного префикса. Попытка необработанного разбора.'
 				);
 			}
 		}
 	}
 
-	// --- Step 4: Attempt final parse ---
+	// --- Шаг 4: Попытка финального парсинга ---
 	let parsedTasks;
 	try {
 		parsedTasks = JSON.parse(cleanedResponse);
 	} catch (parseError) {
-		report('error', `Failed to parse JSON array: ${parseError.message}`);
+		report('error', `Не удалось разобрать массив JSON: ${parseError.message}`);
 		report(
 			'error',
-			`Extraction method used: ${parseMethodUsed}` // Log which method failed
+			`Использованный метод извлечения: ${parseMethodUsed}` // Логируем, какой метод не сработал
 		);
 		report(
 			'error',
-			`Problematic JSON string (first 500 chars): ${cleanedResponse.substring(0, 500)}`
+			`Проблемная строка JSON (первые 500 символов): ${cleanedResponse.substring(0, 500)}`
 		);
 		report(
 			'error',
-			`Original Raw Response (first 500 chars): ${originalResponseForDebug.substring(0, 500)}`
+			`Исходный необработанный ответ (первые 500 символов): ${originalResponseForDebug.substring(0, 500)}`
 		);
 		throw new Error(
-			`Failed to parse JSON response array: ${parseError.message}`
+			`Не удалось разобрать массив ответа JSON: ${parseError.message}`
 		);
 	}
 
-	// --- Step 5 & 6: Validate Array structure and Zod schema ---
+	// --- Шаг 5 и 6: Валидация структуры массива и схемы Zod ---
 	if (!Array.isArray(parsedTasks)) {
 		report(
 			'error',
-			`Parsed content is not an array. Type: ${typeof parsedTasks}`
+			`Разобранное содержимое не является массивом. Тип: ${typeof parsedTasks}`
 		);
 		report(
 			'error',
-			`Parsed content sample: ${JSON.stringify(parsedTasks).substring(0, 200)}`
+			`Пример разобранного содержимого: ${JSON.stringify(parsedTasks).substring(0, 200)}`
 		);
-		throw new Error('Parsed AI response is not a valid JSON array.');
+		throw new Error('Разобранный ответ ИИ не является валидным массивом JSON.');
 	}
 
-	report('info', `Successfully parsed ${parsedTasks.length} potential tasks.`);
+	report('info', `Успешно разобрано ${parsedTasks.length} потенциальных задач.`);
 	if (expectedCount && parsedTasks.length !== expectedCount) {
 		report(
 			'warn',
-			`Expected ${expectedCount} tasks, but parsed ${parsedTasks.length}.`
+			`Ожидалось ${expectedCount} задач, но разобрано ${parsedTasks.length}.`
 		);
 	}
 
 	const validationResult = updatedTaskArraySchema.safeParse(parsedTasks);
 	if (!validationResult.success) {
-		report('error', 'Parsed task array failed Zod validation.');
+		report('error', 'Разобранный массив задач не прошел валидацию Zod.');
 		validationResult.error.errors.forEach((err) => {
-			report('error', `  - Path '${err.path.join('.')}': ${err.message}`);
+			report('error', `  - Путь '${err.path.join('.')}}': ${err.message}`);
 		});
 		throw new Error(
-			`AI response failed task structure validation: ${validationResult.error.message}`
+			`Ответ ИИ не прошел валидацию структуры задачи: ${validationResult.error.message}`
 		);
 	}
 
-	report('info', 'Successfully validated task structure.');
+	report('info', 'Структура задачи успешно прошла валидацию.');
 	return validationResult.data.slice(
 		0,
 		expectedCount || validationResult.data.length
@@ -229,50 +229,49 @@ async function updateTasks(
 	prompt,
 	useResearch = false,
 	context = {},
-	outputFormat = 'text' // Default to text for CLI
+	outputFormat = 'text' // По умолчанию текст для CLI
 ) {
 	const { session, mcpLog, projectRoot: providedProjectRoot } = context;
-	// Use mcpLog if available, otherwise use the imported consoleLog function
+	// Используем mcpLog, если доступен, иначе используем импортированную функцию consoleLog
 	const logFn = mcpLog || consoleLog;
-	// Flag to easily check which logger type we have
+	// Флаг для простой проверки типа логгера
 	const isMCP = !!mcpLog;
 
 	if (isMCP)
-		logFn.info(`updateTasks called with context: session=${!!session}`);
-	else logFn('info', `updateTasks called`); // CLI log
+		logFn.info(`updateTasks вызван с контекстом: session=${!!session}`);
+	else logFn('info', `updateTasks вызван`); // Лог CLI
 
 	try {
-		if (isMCP) logFn.info(`Updating tasks from ID ${fromId}`);
+		if (isMCP) logFn.info(`Обновление задач с ID ${fromId}`);
 		else
 			logFn(
 				'info',
-				`Updating tasks from ID ${fromId} with prompt: "${prompt}"`
+				`Обновление задач с ID ${fromId} с промптом: "${prompt}"`
 			);
 
-		// Determine project root
+		// Определяем корень проекта
 		const projectRoot = providedProjectRoot || findProjectRoot();
 		if (!projectRoot) {
-			throw new Error('Could not determine project root directory');
+			throw new Error('Не удалось определить корневой каталог проекта');
 		}
 
-		// --- Task Loading/Filtering (Unchanged) ---
+		// --- Загрузка/фильтрация задач (без изменений) ---
 		const data = readJSON(tasksPath, projectRoot);
 		if (!data || !data.tasks)
-			throw new Error(`No valid tasks found in ${tasksPath}`);
+			throw new Error(`В файле ${tasksPath} не найдено валидных задач`);
 		const tasksToUpdate = data.tasks.filter(
 			(task) => task.id >= fromId && task.status !== 'done'
 		);
 		if (tasksToUpdate.length === 0) {
 			if (isMCP)
-				logFn.info(`No tasks to update (ID >= ${fromId} and not 'done').`);
+				logFn.info(`Нет задач для обновления (ID >= ${fromId} и не 'done').`);
 			else
-				logFn('info', `No tasks to update (ID >= ${fromId} and not 'done').`);
-			if (outputFormat === 'text') console.log(/* yellow message */);
-			return; // Nothing to do
+				logFn('info', `Нет задач для обновления (ID >= ${fromId} и не 'done').`);
+			return; // Нечего делать
 		}
-		// --- End Task Loading/Filtering ---
+		// --- Конец загрузки/фильтрации задач ---
 
-		// --- Context Gathering ---
+		// --- Сбор контекста ---
 		let gatheredContext = '';
 		try {
 			const contextGatherer = new ContextGatherer(projectRoot);
@@ -294,24 +293,24 @@ async function updateTasks(
 					tasks: finalTaskIds,
 					format: 'research'
 				});
-				gatheredContext = contextResult; // contextResult is a string
+				gatheredContext = contextResult; // contextResult - это строка
 			}
 		} catch (contextError) {
 			logFn(
 				'warn',
-				`Could not gather additional context: ${contextError.message}`
+				`Не удалось собрать дополнительный контекст: ${contextError.message}`
 			);
 		}
-		// --- End Context Gathering ---
+		// --- Конец сбора контекста ---
 
-		// --- Display Tasks to Update (CLI Only - Unchanged) ---
+		// --- Отображение задач для обновления (только CLI - без изменений) ---
 		if (outputFormat === 'text') {
-			// Show the tasks that will be updated
+			// Показываем задачи, которые будут обновлены
 			const table = new Table({
 				head: [
 					chalk.cyan.bold('ID'),
-					chalk.cyan.bold('Title'),
-					chalk.cyan.bold('Status')
+					chalk.cyan.bold('Название'),
+					chalk.cyan.bold('Статус')
 				],
 				colWidths: [5, 70, 20]
 			});
@@ -325,7 +324,7 @@ async function updateTasks(
 			});
 
 			console.log(
-				boxen(chalk.white.bold(`Updating ${tasksToUpdate.length} tasks`), {
+				boxen(chalk.white.bold(`Обновление ${tasksToUpdate.length} задач`), {
 					padding: 1,
 					borderColor: 'blue',
 					borderStyle: 'round',
@@ -335,22 +334,22 @@ async function updateTasks(
 
 			console.log(table.toString());
 
-			// Display a message about how completed subtasks are handled
+			// Отображаем сообщение о том, как обрабатываются выполненные подзадачи
 			console.log(
 				boxen(
-					chalk.cyan.bold('How Completed Subtasks Are Handled:') +
+					chalk.cyan.bold('Как обрабатываются выполненные подзадачи:') +
 						'\n\n' +
 						chalk.white(
-							'• Subtasks marked as "done" or "completed" will be preserved\n'
+							'• Подзадачи, помеченные как "done" или "completed", будут сохранены\n'
 						) +
 						chalk.white(
-							'• New subtasks will build upon what has already been completed\n'
+							'• Новые подзадачи будут создаваться на основе уже выполненных\n'
 						) +
 						chalk.white(
-							'• If completed work needs revision, a new subtask will be created instead of modifying done items\n'
+							'• Если выполненную работу нужно пересмотреть, будет создана новая подзадача, а не изменены существующие\n'
 						) +
 						chalk.white(
-							'• This approach maintains a clear record of completed work and new requirements'
+							'• Такой подход обеспечивает четкий учет выполненной работы и новых требований'
 						),
 					{
 						padding: 1,
@@ -361,52 +360,36 @@ async function updateTasks(
 				)
 			);
 		}
-		// --- End Display Tasks ---
+		// --- Конец отображения задач ---
 
-		// --- Build Prompts (Unchanged Core Logic) ---
-		// Keep the original system prompt logic
-		const systemPrompt = `You are an AI assistant helping to update software development tasks based on new context.
-You will be given a set of tasks and a prompt describing changes or new implementation details.
-Your job is to update the tasks to reflect these changes, while preserving their basic structure.
+		// --- Создание промптов (без изменений основной логики) ---
+		// Сохраняем исходную логику системного промпта
+		const systemPrompt = `Вы — ИИ-ассистент, помогающий обновлять задачи по разработке программного обеспечения на основе нового контекста.\nВам будет предоставлен набор задач и промпт, описывающий изменения или новые детали реализации.\nВаша задача — обновить задачи, чтобы отразить эти изменения, сохранив при этом их базовую структуру.\n\nРекомендации:\n1. Сохраняйте те же ID, статусы и зависимости, если это специально не указано в промпте\n2. Обновите названия, описания, детали и стратегии тестирования, чтобы отразить новую информацию\n3. Не меняйте ничего без необходимости — адаптируйте только то, что нужно изменить на основе промпта\n4. Вы должны вернуть ВСЕ задачи по порядку, а не только измененные\n5. Верните полный валидный объект JSON с обновленным массивом задач\n6. ОЧЕНЬ ВАЖНО: Сохраняйте все подзадачи, помеченные как "done" или "completed" — не изменяйте их содержимое\n7. Для задач с выполненными подзадачами основывайтесь на том, что уже сделано, а не переписывайте все заново\n8. Если существующую выполненную подзадачу необходимо изменить/отменить на основе нового контекста, НЕ изменяйте ее напрямую\n9. Вместо этого добавьте новую подзадачу, которая четко указывает, что необходимо изменить или заменить\n10. Используйте наличие выполненных подзадач как возможность сделать новые подзадачи более конкретными и целенаправленными\n\nИзменения, описанные в промпте, должны быть применены ко ВСЕМ задачам в списке.`;
 
-Guidelines:
-1. Maintain the same IDs, statuses, and dependencies unless specifically mentioned in the prompt
-2. Update titles, descriptions, details, and test strategies to reflect the new information
-3. Do not change anything unnecessarily - just adapt what needs to change based on the prompt
-4. You should return ALL the tasks in order, not just the modified ones
-5. Return a complete valid JSON object with the updated tasks array
-6. VERY IMPORTANT: Preserve all subtasks marked as "done" or "completed" - do not modify their content
-7. For tasks with completed subtasks, build upon what has already been done rather than rewriting everything
-8. If an existing completed subtask needs to be changed/undone based on the new context, DO NOT modify it directly
-9. Instead, add a new subtask that clearly indicates what needs to be changed or replaced
-10. Use the existence of completed subtasks as an opportunity to make new subtasks more specific and targeted
-
-The changes described in the prompt should be applied to ALL tasks in the list.`;
-
-		// Keep the original user prompt logic
+		// Сохраняем исходную логику пользовательского промпта
 		const taskDataString = JSON.stringify(tasksToUpdate, null, 2);
-		let userPrompt = `Here are the tasks to update:\n${taskDataString}\n\nPlease update these tasks based on the following new context:\n${prompt}\n\nIMPORTANT: In the tasks JSON above, any subtasks with "status": "done" or "status": "completed" should be preserved exactly as is. Build your changes around these completed items.`;
+		let userPrompt = `Вот задачи для обновления:\n${taskDataString}\n\nПожалуйста, обновите эти задачи на основе следующего нового контекста:\n${prompt}\n\nВАЖНО: В приведенном выше JSON задач любые подзадачи со статусом "done" или "completed" должны быть сохранены в точности как есть. Стройте свои изменения вокруг этих выполненных элементов.`;
 
 		if (gatheredContext) {
-			userPrompt += `\n\n# Project Context\n\n${gatheredContext}`;
+			userPrompt += `\n\n# Контекст проекта\n\n${gatheredContext}`;
 		}
 
-		userPrompt += `\n\nReturn only the updated tasks as a valid JSON array.`;
-		// --- End Build Prompts ---
+		userPrompt += `\n\nВерните только обновленные задачи в виде валидного массива JSON.`;
+		// --- Конец создания промптов ---
 
-		// --- AI Call ---
+		// --- Вызов ИИ ---
 		let loadingIndicator = null;
 		let aiServiceResponse = null;
 
 		if (!isMCP && outputFormat === 'text') {
-			loadingIndicator = startLoadingIndicator('Updating tasks with AI...\n');
+			loadingIndicator = startLoadingIndicator('Обновление задач с помощью ИИ...\n');
 		}
 
 		try {
-			// Determine role based on research flag
+			// Определяем роль на основе флага research
 			const serviceRole = useResearch ? 'research' : 'main';
 
-			// Call the unified AI service
+			// Вызываем унифицированный сервис ИИ
 			aiServiceResponse = await generateTextService({
 				role: serviceRole,
 				session: session,
@@ -418,9 +401,9 @@ The changes described in the prompt should be applied to ALL tasks in the list.`
 			});
 
 			if (loadingIndicator)
-				stopLoadingIndicator(loadingIndicator, 'AI update complete.');
+				stopLoadingIndicator(loadingIndicator, 'Обновление ИИ завершено.');
 
-			// Use the mainResult (text) for parsing
+			// Используем mainResult (текст) для парсинга
 			const parsedUpdatedTasks = parseUpdatedTasksFromText(
 				aiServiceResponse.mainResult,
 				tasksToUpdate.length,
@@ -428,23 +411,23 @@ The changes described in the prompt should be applied to ALL tasks in the list.`
 				isMCP
 			);
 
-			// --- Update Tasks Data (Unchanged) ---
+			// --- Обновление данных задач (без изменений) ---
 			if (!Array.isArray(parsedUpdatedTasks)) {
-				// Should be caught by parser, but extra check
+				// Должно быть перехвачено парсером, но дополнительная проверка
 				throw new Error(
-					'Parsed AI response for updated tasks was not an array.'
+					'Разобранный ответ ИИ для обновленных задач не был массивом.'
 				);
 			}
 			if (isMCP)
 				logFn.info(
-					`Received ${parsedUpdatedTasks.length} updated tasks from AI.`
+					`Получено ${parsedUpdatedTasks.length} обновленных задач от ИИ.`
 				);
 			else
 				logFn(
 					'info',
-					`Received ${parsedUpdatedTasks.length} updated tasks from AI.`
+					`Получено ${parsedUpdatedTasks.length} обновленных задач от ИИ.`
 				);
-			// Create a map for efficient lookup
+			// Создаем карту для эффективного поиска
 			const updatedTasksMap = new Map(
 				parsedUpdatedTasks.map((task) => [task.id, task])
 			);
@@ -452,30 +435,30 @@ The changes described in the prompt should be applied to ALL tasks in the list.`
 			let actualUpdateCount = 0;
 			data.tasks.forEach((task, index) => {
 				if (updatedTasksMap.has(task.id)) {
-					// Only update if the task was part of the set sent to AI
+					// Обновляем только если задача была частью набора, отправленного ИИ
 					data.tasks[index] = updatedTasksMap.get(task.id);
 					actualUpdateCount++;
 				}
 			});
 			if (isMCP)
 				logFn.info(
-					`Applied updates to ${actualUpdateCount} tasks in the dataset.`
+					`Применено обновлений к ${actualUpdateCount} задачам в наборе данных.`
 				);
 			else
 				logFn(
 					'info',
-					`Applied updates to ${actualUpdateCount} tasks in the dataset.`
+					`Применено обновлений к ${actualUpdateCount} задачам в наборе данных.`
 				);
 
 			writeJSON(tasksPath, data);
 			if (isMCP)
 				logFn.info(
-					`Successfully updated ${actualUpdateCount} tasks in ${tasksPath}`
+					`Успешно обновлено ${actualUpdateCount} задач в ${tasksPath}`
 				);
 			else
 				logFn(
 					'success',
-					`Successfully updated ${actualUpdateCount} tasks in ${tasksPath}`
+					`Успешно обновлено ${actualUpdateCount} задач в ${tasksPath}`
 				);
 			// await generateTaskFiles(tasksPath, path.dirname(tasksPath));
 
@@ -491,17 +474,17 @@ The changes described in the prompt should be applied to ALL tasks in the list.`
 			};
 		} catch (error) {
 			if (loadingIndicator) stopLoadingIndicator(loadingIndicator);
-			if (isMCP) logFn.error(`Error during AI service call: ${error.message}`);
-			else logFn('error', `Error during AI service call: ${error.message}`);
+			if (isMCP) logFn.error(`Ошибка во время вызова сервиса ИИ: ${error.message}`);
+			else logFn('error', `Ошибка во время вызова сервиса ИИ: ${error.message}`);
 			if (error.message.includes('API key')) {
 				if (isMCP)
 					logFn.error(
-						'Please ensure API keys are configured correctly in .env or mcp.json.'
+						'Пожалуйста, убедитесь, что ключи API настроены правильно в .env или mcp.json.'
 					);
 				else
 					logFn(
 						'error',
-						'Please ensure API keys are configured correctly in .env or mcp.json.'
+						'Пожалуйста, убедитесь, что ключи API настроены правильно в .env или mcp.json.'
 					);
 			}
 			throw error;
@@ -509,20 +492,18 @@ The changes described in the prompt should be applied to ALL tasks in the list.`
 			if (loadingIndicator) stopLoadingIndicator(loadingIndicator);
 		}
 	} catch (error) {
-		// --- General Error Handling (Unchanged) ---
-		if (isMCP) logFn.error(`Error updating tasks: ${error.message}`);
-		else logFn('error', `Error updating tasks: ${error.message}`);
+		// --- Общая обработка ошибок (без изменений) ---
+		if (isMCP) logFn.error(`Ошибка при обновлении задач: ${error.message}`);
+		else logFn('error', `Ошибка при обновлении задач: ${error.message}`);
 		if (outputFormat === 'text') {
-			console.error(chalk.red(`Error: ${error.message}`));
+			console.error(chalk.red(`Ошибка: ${error.message}`));
 			if (getDebugFlag(session)) {
 				console.error(error);
 			}
 			process.exit(1);
 		} else {
-			throw error; // Re-throw for MCP/programmatic callers
+			throw error; // Повторно выбрасываем для MCP/программных вызывающих сторон
 		}
-		// --- End General Error Handling ---
+		// --- Конец общей обработки ошибок ---
 	}
 }
-
-export default updateTasks;

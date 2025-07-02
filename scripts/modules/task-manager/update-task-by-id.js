@@ -3,7 +3,7 @@ import path from 'path';
 import chalk from 'chalk';
 import boxen from 'boxen';
 import Table from 'cli-table3';
-import { z } from 'zod'; // Keep Zod for post-parse validation
+import { z } from 'zod'; // Zod оставляем для валидации после парсинга
 
 import {
 	log as consoleLog,
@@ -46,7 +46,7 @@ const updatedTaskSchema = z
 						.number()
 						.int()
 						.positive()
-						.describe('Sequential subtask ID starting from 1'),
+						.describe('Последовательный ID подзадачи, начиная с 1'),
 					title: z.string(),
 					description: z.string(),
 					status: z.string(),
@@ -58,7 +58,7 @@ const updatedTaskSchema = z
 			.nullable()
 			.default([])
 	})
-	.strip(); // Allows parsing even if AI adds extra fields, but validation focuses on schema
+	.strip(); // Позволяет парсинг, даже если ИИ добавляет лишние поля, но валидация фокусируется на схеме
 
 /**
  * Parses a single updated task object from AI's text response.
@@ -70,7 +70,7 @@ const updatedTaskSchema = z
  * @throws {Error} If parsing or validation fails.
  */
 function parseUpdatedTaskFromText(text, expectedTaskId, logFn, isMCP) {
-	// Report helper consistent with the established pattern
+	// Вспомогательная функция для отчетов, соответствующая установленному шаблону
 	const report = (level, ...args) => {
 		if (isMCP) {
 			if (typeof logFn[level] === 'function') logFn[level](...args);
@@ -82,16 +82,16 @@ function parseUpdatedTaskFromText(text, expectedTaskId, logFn, isMCP) {
 
 	report(
 		'info',
-		'Attempting to parse updated task object from text response...'
+		'Попытка разобрать обновленный объект задачи из текстового ответа...'
 	);
 	if (!text || text.trim() === '')
-		throw new Error('AI response text is empty.');
+		throw new Error('Текст ответа ИИ пуст.');
 
 	let cleanedResponse = text.trim();
 	const originalResponseForDebug = cleanedResponse;
-	let parseMethodUsed = 'raw'; // Keep track of which method worked
+	let parseMethodUsed = 'raw'; // Отслеживаем, какой метод сработал
 
-	// --- NEW Step 1: Try extracting between {} first ---
+	// --- НОВЫЙ Шаг 1: Сначала пытаемся извлечь содержимое между {} ---
 	const firstBraceIndex = cleanedResponse.indexOf('{');
 	const lastBraceIndex = cleanedResponse.lastIndexOf('}');
 	let potentialJsonFromBraces = null;
@@ -102,7 +102,7 @@ function parseUpdatedTaskFromText(text, expectedTaskId, logFn, isMCP) {
 			lastBraceIndex + 1
 		);
 		if (potentialJsonFromBraces.length <= 2) {
-			potentialJsonFromBraces = null; // Ignore empty braces {}
+			potentialJsonFromBraces = null; // Игнорируем пустые скобки {}
 		}
 	}
 
@@ -110,20 +110,20 @@ function parseUpdatedTaskFromText(text, expectedTaskId, logFn, isMCP) {
 	if (potentialJsonFromBraces) {
 		try {
 			const testParse = JSON.parse(potentialJsonFromBraces);
-			// It worked! Use this as the primary cleaned response.
+			// Сработало! Используем это как основной очищенный ответ.
 			cleanedResponse = potentialJsonFromBraces;
 			parseMethodUsed = 'braces';
 		} catch (e) {
 			report(
 				'info',
-				'Content between {} looked promising but failed initial parse. Proceeding to other methods.'
+				'Содержимое между {} выглядело многообещающе, но не прошло первичный разбор. Переход к другим методам.'
 			);
-			// Reset cleanedResponse to original if brace parsing failed
+			// Сбрасываем cleanedResponse к исходному, если парсинг скобок не удался
 			cleanedResponse = originalResponseForDebug;
 		}
 	}
 
-	// --- Step 2: If brace parsing didn't work or wasn't applicable, try code block extraction ---
+	// --- Шаг 2: Если парсинг скобок не сработал или неприменим, пытаемся извлечь блок кода ---
 	if (parseMethodUsed === 'raw') {
 		const codeBlockMatch = cleanedResponse.match(
 			/```(?:json|javascript)?\s*([\s\S]*?)\s*```/i
@@ -131,9 +131,9 @@ function parseUpdatedTaskFromText(text, expectedTaskId, logFn, isMCP) {
 		if (codeBlockMatch) {
 			cleanedResponse = codeBlockMatch[1].trim();
 			parseMethodUsed = 'codeblock';
-			report('info', 'Extracted JSON content from Markdown code block.');
+			report('info', 'Извлечено содержимое JSON из блока кода Markdown.');
 		} else {
-			// --- Step 3: If code block failed, try stripping prefixes ---
+			// --- Шаг 3: Если извлечение блока кода не удалось, пытаемся удалить префиксы ---
 			const commonPrefixes = [
 				'json\n',
 				'javascript\n'
@@ -144,7 +144,7 @@ function parseUpdatedTaskFromText(text, expectedTaskId, logFn, isMCP) {
 				if (cleanedResponse.toLowerCase().startsWith(prefix)) {
 					cleanedResponse = cleanedResponse.substring(prefix.length).trim();
 					parseMethodUsed = 'prefix';
-					report('info', `Stripped prefix: "${prefix.trim()}"`);
+					report('info', `Удален префикс: "${prefix.trim()}"`);
 					prefixFound = true;
 					break;
 				}
@@ -152,66 +152,66 @@ function parseUpdatedTaskFromText(text, expectedTaskId, logFn, isMCP) {
 			if (!prefixFound) {
 				report(
 					'warn',
-					'Response does not appear to contain {}, code block, or known prefix. Attempting raw parse.'
+					'Ответ, похоже, не содержит {}, блока кода или известного префикса. Попытка необработанного разбора.'
 				);
 			}
 		}
 	}
 
-	// --- Step 4: Attempt final parse ---
+	// --- Шаг 4: Попытка финального парсинга ---
 	let parsedTask;
 	try {
 		parsedTask = JSON.parse(cleanedResponse);
 	} catch (parseError) {
-		report('error', `Failed to parse JSON object: ${parseError.message}`);
+		report('error', `Не удалось разобрать объект JSON: ${parseError.message}`);
 		report(
 			'error',
-			`Problematic JSON string (first 500 chars): ${cleanedResponse.substring(0, 500)}`
+			`Проблемная строка JSON (первые 500 символов): ${cleanedResponse.substring(0, 500)}`
 		);
 		report(
 			'error',
-			`Original Raw Response (first 500 chars): ${originalResponseForDebug.substring(0, 500)}`
+			`Исходный необработанный ответ (первые 500 символов): ${originalResponseForDebug.substring(0, 500)}`
 		);
 		throw new Error(
-			`Failed to parse JSON response object: ${parseError.message}`
+			`Не удалось разобрать объект ответа JSON: ${parseError.message}`
 		);
 	}
 
 	if (!parsedTask || typeof parsedTask !== 'object') {
 		report(
 			'error',
-			`Parsed content is not an object. Type: ${typeof parsedTask}`
+			`Разобранное содержимое не является объектом. Тип: ${typeof parsedTask}`
 		);
 		report(
 			'error',
-			`Parsed content sample: ${JSON.stringify(parsedTask).substring(0, 200)}`
+			`Образец разобранного содержимого: ${JSON.stringify(parsedTask).substring(0, 200)}`
 		);
-		throw new Error('Parsed AI response is not a valid JSON object.');
+		throw new Error('Разобранный ответ ИИ не является действительным объектом JSON.');
 	}
 
-	// Validate the parsed task object using Zod
+	// Валидируем разобранный объект задачи с помощью Zod
 	const validationResult = updatedTaskSchema.safeParse(parsedTask);
 	if (!validationResult.success) {
-		report('error', 'Parsed task object failed Zod validation.');
+		report('error', 'Разобранный объект задачи не прошел валидацию Zod.');
 		validationResult.error.errors.forEach((err) => {
-			report('error', `  - Field '${err.path.join('.')}': ${err.message}`);
+			report('error', `  - Поле '${err.path.join('.')}}': ${err.message}`);
 		});
 		throw new Error(
-			`AI response failed task structure validation: ${validationResult.error.message}`
+			`Ответ ИИ не прошел валидацию структуры задачи: ${validationResult.error.message}`
 		);
 	}
 
-	// Final check: ensure ID matches expected ID (AI might hallucinate)
+	// Финальная проверка: убеждаемся, что ID совпадает с ожидаемым (ИИ может галлюцинировать)
 	if (validationResult.data.id !== expectedTaskId) {
 		report(
 			'warn',
-			`AI returned task with ID ${validationResult.data.id}, but expected ${expectedTaskId}. Overwriting ID.`
+			`ИИ изменил ID задачи. Восстановление исходного ID ${expectedTaskId}.`
 		);
-		validationResult.data.id = expectedTaskId; // Enforce correct ID
+		validationResult.data.id = expectedTaskId; // Принудительно устанавливаем правильный ID
 	}
 
-	report('info', 'Successfully validated updated task structure.');
-	return validationResult.data; // Return the validated task data
+	report('info', 'Структура обновленной задачи успешно прошла валидацию.');
+	return validationResult.data; // Возвращаем валидированные данные задачи
 }
 
 /**
@@ -252,78 +252,82 @@ async function updateTaskById(
 	};
 
 	try {
-		report('info', `Updating single task ${taskId} with prompt: "${prompt}"`);
+		report('info', `Обновление одной задачи ${taskId} с промптом: "${prompt}"`);
 
-		// --- Input Validations (Keep existing) ---
+		// --- Валидация входных данных (оставляем существующую) ---
 		if (!Number.isInteger(taskId) || taskId <= 0)
 			throw new Error(
-				`Invalid task ID: ${taskId}. Task ID must be a positive integer.`
+				`Неверный ID задачи: ${taskId}. ID задачи должен быть положительным целым числом.`
 			);
 		if (!prompt || typeof prompt !== 'string' || prompt.trim() === '')
-			throw new Error('Prompt cannot be empty.');
+			throw new Error('Промпт не может быть пустым.');
 		if (useResearch && !isApiKeySet('perplexity', session)) {
 			report(
 				'warn',
-				'Perplexity research requested but API key not set. Falling back.'
+				'Запрошено исследование Perplexity, но ключ API не установлен. Используется запасной вариант.'
 			);
 			if (outputFormat === 'text')
 				console.log(
-					chalk.yellow('Perplexity AI not available. Falling back to main AI.')
+					chalk.yellow('ИИ Perplexity недоступен. Переключение на основной ИИ.')
 				);
 			useResearch = false;
 		}
 		if (!fs.existsSync(tasksPath))
-			throw new Error(`Tasks file not found: ${tasksPath}`);
-		// --- End Input Validations ---
+			throw new Error(`Файл задач не найден: ${tasksPath}`);
+		// --- Конец валидации входных данных ---
 
-		// Determine project root
+		// Определяем корень проекта
 		const projectRoot = providedProjectRoot || findProjectRoot();
 		if (!projectRoot) {
-			throw new Error('Could not determine project root directory');
+			throw new Error('Не удалось определить корневой каталог проекта');
 		}
 
-		// Determine the tag to use
+		// Определяем тег для использования
 		const currentTag = tag || getCurrentTag(projectRoot) || 'master';
 
-		// --- Task Loading and Status Check (Keep existing) ---
+		// --- Загрузка задачи и проверка статуса (оставляем существующую) ---
 		const data = readJSON(tasksPath, projectRoot, currentTag);
 		if (!data || !data.tasks)
-			throw new Error(`No valid tasks found in ${tasksPath}.`);
+			throw new Error(`В файле ${tasksPath} не найдено валидных задач.`);
 		const taskIndex = data.tasks.findIndex((task) => task.id === taskId);
-		if (taskIndex === -1) throw new Error(`Task with ID ${taskId} not found.`);
+		if (taskIndex === -1) throw new Error(`Задача с ID ${taskId} не найдена.`);
 		const taskToUpdate = data.tasks[taskIndex];
 		if (taskToUpdate.status === 'done' || taskToUpdate.status === 'completed') {
 			report(
 				'warn',
-				`Task ${taskId} is already marked as done and cannot be updated`
+				`Задача ${taskId} уже помечена как выполненная и не может быть обновлена`
 			);
 
-			// Only show warning box for text output (CLI)
+			// Показываем предупреждение только для текстового вывода (CLI)
 			if (outputFormat === 'text') {
 				console.log(
 					boxen(
 						chalk.yellow(
-							`Task ${taskId} is already marked as ${taskToUpdate.status} and cannot be updated.`
+							`Задача ${taskId} уже помечена как ${taskToUpdate.status} и не может быть обновлена.`
 						) +
 							'\n\n' +
 							chalk.white(
-								'Completed tasks are locked to maintain consistency. To modify a completed task, you must first:'
+								'Выполненные задачи заблокированы для сохранения целостности. Чтобы изменить выполненную задачу, вы должны сначала:'
 							) +
 							'\n' +
 							chalk.white(
-								'1. Change its status to "pending" or "in-progress"'
+								'1. Изменить ее статус на "pending" или "in-progress"'
 							) +
 							'\n' +
-							chalk.white('2. Then run the update-task command'),
-						{ padding: 1, borderColor: 'yellow', borderStyle: 'round' }
+							chalk.white('2. Затем выполнить команду update-task'),
+						{
+							padding: 1,
+							borderColor: 'yellow',
+							borderStyle: 'round'
+						}
 					)
 				);
 			}
 			return null;
 		}
-		// --- End Task Loading ---
+		// --- Конец загрузки задачи ---
 
-		// --- Context Gathering ---
+		// --- Сбор контекста ---
 		let gatheredContext = '';
 		try {
 			const contextGatherer = new ContextGatherer(projectRoot);
@@ -348,18 +352,18 @@ async function updateTaskById(
 				gatheredContext = contextResult;
 			}
 		} catch (contextError) {
-			report('warn', `Could not gather context: ${contextError.message}`);
+			report('warn', `Не удалось собрать контекст: ${contextError.message}`);
 		}
-		// --- End Context Gathering ---
+		// --- Конец сбора контекста ---
 
-		// --- Display Task Info (CLI Only - Keep existing) ---
+		// --- Отображение информации о задаче (только CLI - оставляем существующее) ---
 		if (outputFormat === 'text') {
-			// Show the task that will be updated
+			// Показываем задачу, которая будет обновлена
 			const table = new Table({
 				head: [
 					chalk.cyan.bold('ID'),
-					chalk.cyan.bold('Title'),
-					chalk.cyan.bold('Status')
+					chalk.cyan.bold('Название'),
+					chalk.cyan.bold('Статус')
 				],
 				colWidths: [5, 60, 10]
 			});
@@ -371,7 +375,7 @@ async function updateTaskById(
 			]);
 
 			console.log(
-				boxen(chalk.white.bold(`Updating Task #${taskId}`), {
+				boxen(chalk.white.bold(`Обновление задачи #${taskId}`), {
 					padding: 1,
 					borderColor: 'blue',
 					borderStyle: 'round',
@@ -381,22 +385,22 @@ async function updateTaskById(
 
 			console.log(table.toString());
 
-			// Display a message about how completed subtasks are handled
+			// Отображаем сообщение о том, как обрабатываются выполненные подзадачи
 			console.log(
 				boxen(
-					chalk.cyan.bold('How Completed Subtasks Are Handled:') +
+					chalk.cyan.bold('Как обрабатываются выполненные подзадачи:') +
 						'\n\n' +
 						chalk.white(
-							'• Subtasks marked as "done" or "completed" will be preserved\n'
+							'• Подзадачи, помеченные как "done" или "completed", будут сохранены\n'
 						) +
 						chalk.white(
-							'• New subtasks will build upon what has already been completed\n'
+							'• Новые подзадачи будут создаваться на основе уже выполненных\n'
 						) +
 						chalk.white(
-							'• If completed work needs revision, a new subtask will be created instead of modifying done items\n'
+							'• Если выполненную работу нужно пересмотреть, будет создана новая подзадача, а не изменены существующие\n'
 						) +
 						chalk.white(
-							'• This approach maintains a clear record of completed work and new requirements'
+							'• Такой подход обеспечивает четкий учет выполненной работы и новых требований'
 						),
 					{
 						padding: 1,
@@ -408,78 +412,47 @@ async function updateTaskById(
 			);
 		}
 
-		// --- Build Prompts (Different for append vs full update) ---
+		// --- Создание промптов (разные для добавления и полного обновления) ---
 		let systemPrompt;
 		let userPrompt;
 
 		if (appendMode) {
-			// Append mode: generate new content to add to task details
-			systemPrompt = `You are an AI assistant helping to append additional information to a software development task. You will be provided with the task's existing details, context, and a user request string.
+			// Режим добавления: генерируем новый контент для добавления в детали задачи
+			systemPrompt = `Вы — ИИ-ассистент, помогающий добавлять дополнительную информацию к задаче по разработке программного обеспечения. Вам будут предоставлены существующие детали задачи, контекст и строка запроса пользователя.\n\nВаша цель: Основываясь *только* на запросе пользователя и всем предоставленном контексте (включая существующие детали, если они имеют отношение к запросу), СГЕНЕРИРУЙТЕ новый текстовый контент, который следует добавить в детали задачи.\nСосредоточьтесь *только* на генерации сути обновления.\n\nТребования к выводу:\n1. Возвращайте *только* вновь сгенерированный текстовый контент в виде простой строки. НЕ возвращайте объект JSON или любые другие структурированные данные.\n2. Ваш строковый ответ НЕ должен включать никаких исходных деталей задачи, если только запрос пользователя явно не просит перефразировать, обобщить или напрямую изменить существующий текст.\n3. НЕ включайте в свой строковый ответ никаких временных меток, XML-подобных тегов, markdown или любого другого специального форматирования.\n4. Убедитесь, что сгенерированный текст является кратким, но полным для обновления на основе запроса пользователя. Избегайте разговорных наполнителей или объяснений того, что вы делаете (например, не начинайте с "Хорошо, вот обновление...").`;
 
-Your Goal: Based *only* on the user's request and all the provided context (including existing details if relevant to the request), GENERATE the new text content that should be added to the task's details.
-Focus *only* on generating the substance of the update.
-
-Output Requirements:
-1. Return *only* the newly generated text content as a plain string. Do NOT return a JSON object or any other structured data.
-2. Your string response should NOT include any of the task's original details, unless the user's request explicitly asks to rephrase, summarize, or directly modify existing text.
-3. Do NOT include any timestamps, XML-like tags, markdown, or any other special formatting in your string response.
-4. Ensure the generated text is concise yet complete for the update based on the user request. Avoid conversational fillers or explanations about what you are doing (e.g., do not start with "Okay, here's the update...").`;
-
-			const taskContext = `
-Task: ${JSON.stringify({
+			const taskContext = `\nTask: ${JSON.stringify({
 				id: taskToUpdate.id,
 				title: taskToUpdate.title,
 				description: taskToUpdate.description,
 				status: taskToUpdate.status
-			})}
-Current Task Details (for context only):\n${taskToUpdate.details || '(No existing details)'}
-`;
+			})}\nТекущие детали задачи (только для контекста):\n${taskToUpdate.details || '(Нет существующих деталей)'}\n`;
 
-			userPrompt = `Task Context:\n${taskContext}\n\nUser Request: "${prompt}"\n\nBased on the User Request and all the Task Context (including current task details provided above), what is the new information or text that should be appended to this task's details? Return ONLY this new text as a plain string.`;
+			userPrompt = `Контекст задачи:\n${taskContext}\n\nЗапрос пользователя: "${prompt}"\n\nОсновываясь на запросе пользователя и всем контексте задачи (включая текущие детали задачи, представленные выше), какую новую информацию или текст следует добавить в детали этой задачи? Верните ТОЛЬКО этот новый текст в виде простой строки.`;
 
 			if (gatheredContext) {
-				userPrompt += `\n\n# Additional Project Context\n\n${gatheredContext}`;
+				userPrompt += `\n\n# Дополнительный контекст проекта\n\n${gatheredContext}`;
 			}
 		} else {
-			// Full update mode: use original prompts
-			systemPrompt = `You are an AI assistant helping to update a software development task based on new context.
-You will be given a task and a prompt describing changes or new implementation details.
-Your job is to update the task to reflect these changes, while preserving its basic structure.
-
-Guidelines:
-1. VERY IMPORTANT: NEVER change the title of the task - keep it exactly as is
-2. Maintain the same ID, status, and dependencies unless specifically mentioned in the prompt
-3. Update the description, details, and test strategy to reflect the new information
-4. Do not change anything unnecessarily - just adapt what needs to change based on the prompt
-5. Return a complete valid JSON object representing the updated task
-6. VERY IMPORTANT: Preserve all subtasks marked as "done" or "completed" - do not modify their content
-7. For tasks with completed subtasks, build upon what has already been done rather than rewriting everything
-8. If an existing completed subtask needs to be changed/undone based on the new context, DO NOT modify it directly
-9. Instead, add a new subtask that clearly indicates what needs to be changed or replaced
-10. Use the existence of completed subtasks as an opportunity to make new subtasks more specific and targeted
-11. Ensure any new subtasks have unique IDs that don't conflict with existing ones
-12. CRITICAL: For subtask IDs, use ONLY numeric values (1, 2, 3, etc.) NOT strings ("1", "2", "3")
-13. CRITICAL: Subtask IDs should start from 1 and increment sequentially (1, 2, 3...) - do NOT use parent task ID as prefix
-
-The changes described in the prompt should be thoughtfully applied to make the task more accurate and actionable.`;
+			// Режим полного обновления: используем исходные промпты
+			systemPrompt = `Вы — ИИ-ассистент, помогающий обновлять задачу по разработке программного обеспечения на основе нового контекста.\nВам будет дана задача и промпт, описывающий изменения или новые детали реализации.\nВаша задача — обновить задачу, чтобы отразить эти изменения, сохранив при этом ее базовую структуру.\n\nРекомендации:\n1. ОЧЕНЬ ВАЖНО: НИКОГДА не меняйте название задачи — оставляйте его в точности как есть\n2. Сохраняйте те же ID, статус и зависимости, если это специально не указано в промпте\n3. Обновите описание, детали и стратегию тестирования, чтобы отразить новую информацию\n4. Не меняйте ничего без необходимости — адаптируйте только то, что нужно изменить на основе промпта\n5. Верните полный валидный объект JSON, представляющий обновленную задачу\n6. ОЧЕНЬ ВАЖНО: Сохраняйте все подзадачи, помеченные как "done" или "completed" — не изменяйте их содержимое\n7. Для задач с выполненными подзадачами основывайтесь на том, что уже сделано, а не переписывайте все заново\n8. Если существующую выполненную подзадачу необходимо изменить/отменить на основе нового контекста, НЕ изменяйте ее напрямую\n9. Вместо этого добавьте новую подзадачу, которая четко указывает, что необходимо изменить или заменить\n10. Используйте наличие выполненных подзадач как возможность сделать новые подзадачи более конкретными и целенаправленными\n11. Убедитесь, что у любых новых подзадач есть уникальные ID, которые не конфликтуют с существующими\n12. КРИТИЧЕСКИ ВАЖНО: Для ID подзадач используйте ТОЛЬКО числовые значения (1, 2, 3 и т. д.), а НЕ строки ("1", "2", "3")\n13. КРИТИЧЕСКИ ВАЖНО: ID подзадач должны начинаться с 1 и увеличиваться последовательно (1, 2, 3...) — НЕ используйте ID родительской задачи в качестве префикса\n\nИзменения, описанные в промпте, должны быть вдумчиво применены, чтобы сделать задачу более точной и действенной.`;
 
 			const taskDataString = JSON.stringify(taskToUpdate, null, 2);
-			userPrompt = `Here is the task to update:\n${taskDataString}\n\nPlease update this task based on the following new context:\n${prompt}\n\nIMPORTANT: In the task JSON above, any subtasks with "status": "done" or "status": "completed" should be preserved exactly as is. Build your changes around these completed items.`;
+			userPrompt = `Вот задача для обновления:\n${taskDataString}\n\nПожалуйста, обновите эту задачу на основе следующего нового контекста:\n${prompt}\n\nВАЖНО: В приведенном выше JSON задачи любые подзадачи со статусом "done" или "completed" должны быть сохранены в точности как есть. Стройте свои изменения вокруг этих выполненных элементов.`;
 
 			if (gatheredContext) {
-				userPrompt += `\n\n# Project Context\n\n${gatheredContext}`;
+				userPrompt += `\n\n# Контекст проекта\n\n${gatheredContext}`;
 			}
 
-			userPrompt += `\n\nReturn only the updated task as a valid JSON object.`;
+			userPrompt += `\n\nВерните только обновленную задачу в виде валидного объекта JSON.`;
 		}
-		// --- End Build Prompts ---
+		// --- Конец создания промптов ---
 
 		let loadingIndicator = null;
 		let aiServiceResponse = null;
 
 		if (!isMCP && outputFormat === 'text') {
 			loadingIndicator = startLoadingIndicator(
-				useResearch ? 'Updating task with research...\n' : 'Updating task...\n'
+				useResearch ? 'Обновление задачи с исследованием...\n' : 'Обновление задачи...\n'
 			);
 		}
 
@@ -496,16 +469,16 @@ The changes described in the prompt should be thoughtfully applied to make the t
 			});
 
 			if (loadingIndicator)
-				stopLoadingIndicator(loadingIndicator, 'AI update complete.');
+				stopLoadingIndicator(loadingIndicator, 'Обновление ИИ завершено.');
 
 			if (appendMode) {
-				// Append mode: handle as plain text
+				// Режим добавления: обрабатываем как обычный текст
 				const generatedContentString = aiServiceResponse.mainResult;
 				let newlyAddedSnippet = '';
 
 				if (generatedContentString && generatedContentString.trim()) {
 					const timestamp = new Date().toISOString();
-					const formattedBlock = `<info added on ${timestamp}>\n${generatedContentString.trim()}\n</info added on ${timestamp}>`;
+					const formattedBlock = `<info добавлено ${timestamp}>\n${generatedContentString.trim()}\n</info добавлено ${timestamp}>`;
 					newlyAddedSnippet = formattedBlock;
 
 					// Append to task details
@@ -515,47 +488,51 @@ The changes described in the prompt should be thoughtfully applied to make the t
 				} else {
 					report(
 						'warn',
-						'AI response was empty or whitespace after trimming. Original details remain unchanged.'
+						'Ответ ИИ был пустым или состоял из пробелов после обрезки. Исходные детали остаются без изменений.'
 					);
-					newlyAddedSnippet = 'No new details were added by the AI.';
+					newlyAddedSnippet = 'ИИ не добавил новых деталей.';
 				}
 
-				// Update description with timestamp if prompt is short
+				// Обновляем описание с временной меткой, если промпт короткий
 				if (prompt.length < 100) {
 					if (taskToUpdate.description) {
-						taskToUpdate.description += ` [Updated: ${new Date().toLocaleDateString()}]`;
+						taskToUpdate.description += ` [Обновлено: ${new Date().toLocaleDateString()}]`;
 					}
 				}
 
-				// Write the updated task back to file
+				// Записываем обновленную задачу обратно в файл
 				data.tasks[taskIndex] = taskToUpdate;
 				writeJSON(tasksPath, data, projectRoot, currentTag);
-				report('success', `Successfully appended to task ${taskId}`);
+				report('success', `Успешно добавлено в задачу ${taskId}`);
 
-				// Display success message for CLI
+				// Отображаем сообщение об успехе для CLI
 				if (outputFormat === 'text') {
 					console.log(
 						boxen(
-							chalk.green(`Successfully appended to task #${taskId}`) +
+							chalk.green(`Успешно добавлено в задачу #${taskId}`) +
 								'\n\n' +
-								chalk.white.bold('Title:') +
+								chalk.white.bold('Название:') +
 								' ' +
 								taskToUpdate.title +
 								'\n\n' +
-								chalk.white.bold('Newly Added Content:') +
+								chalk.white.bold('Новый добавленный контент:') +
 								'\n' +
 								chalk.white(newlyAddedSnippet),
-							{ padding: 1, borderColor: 'green', borderStyle: 'round' }
+							{
+								padding: 1,
+								borderColor: 'green',
+								borderStyle: 'round'
+							}
 						)
 					);
 				}
 
-				// Display AI usage telemetry for CLI users
+				// Отображаем телеметрию использования ИИ для пользователей CLI
 				if (outputFormat === 'text' && aiServiceResponse.telemetryData) {
 					displayAiUsageSummary(aiServiceResponse.telemetryData, 'cli');
 				}
 
-				// Return the updated task
+				// Возвращаем обновленную задачу
 				return {
 					updatedTask: taskToUpdate,
 					telemetryData: aiServiceResponse.telemetryData,
@@ -563,7 +540,7 @@ The changes described in the prompt should be thoughtfully applied to make the t
 				};
 			}
 
-			// Full update mode: Use mainResult (text) for parsing
+			// Режим полного обновления: используем mainResult (текст) для парсинга
 			const updatedTask = parseUpdatedTaskFromText(
 				aiServiceResponse.mainResult,
 				taskId,
@@ -571,35 +548,35 @@ The changes described in the prompt should be thoughtfully applied to make the t
 				isMCP
 			);
 
-			// --- Task Validation/Correction (Keep existing logic) ---
+			// --- Валидация/коррекция задачи (оставляем существующую логику) ---
 			if (!updatedTask || typeof updatedTask !== 'object')
-				throw new Error('Received invalid task object from AI.');
+				throw new Error('От ИИ получен неверный объект задачи.');
 			if (!updatedTask.title || !updatedTask.description)
-				throw new Error('Updated task missing required fields.');
-			// Preserve ID if AI changed it
+				throw new Error('В обновленной задаче отсутствуют обязательные поля.');
+			// Сохраняем ID, если ИИ его изменил
 			if (updatedTask.id !== taskId) {
-				report('warn', `AI changed task ID. Restoring original ID ${taskId}.`);
+				report('warn', `ИИ изменил ID задачи. Восстанавливаем исходный ID ${taskId}.`);
 				updatedTask.id = taskId;
 			}
-			// Preserve status if AI changed it
+			// Сохраняем статус, если ИИ его изменил
 			if (
 				updatedTask.status !== taskToUpdate.status &&
 				!prompt.toLowerCase().includes('status')
 			) {
 				report(
 					'warn',
-					`AI changed task status. Restoring original status '${taskToUpdate.status}'.`
+					`ИИ изменил статус задачи. Восстанавливаем исходный статус '${taskToUpdate.status}'.`
 				);
 				updatedTask.status = taskToUpdate.status;
 			}
-			// Fix subtask IDs if they exist (ensure they are numeric and sequential)
+			// Исправляем ID подзадач, если они существуют (убеждаемся, что они числовые и последовательные)
 			if (updatedTask.subtasks && Array.isArray(updatedTask.subtasks)) {
 				let currentSubtaskId = 1;
 				updatedTask.subtasks = updatedTask.subtasks.map((subtask) => {
-					// Fix AI-generated subtask IDs that might be strings or use parent ID as prefix
+					// Исправляем сгенерированные ИИ ID подзадач, которые могут быть строками или использовать ID родительской задачи в качестве префикса
 					const correctedSubtask = {
 						...subtask,
-						id: currentSubtaskId, // Override AI-generated ID with correct sequential ID
+						id: currentSubtaskId, // Переопределяем сгенерированный ИИ ID правильным последовательным ID
 						dependencies: Array.isArray(subtask.dependencies)
 							? subtask.dependencies
 									.map((dep) =>
@@ -619,16 +596,16 @@ The changes described in the prompt should be thoughtfully applied to make the t
 				});
 				report(
 					'info',
-					`Fixed ${updatedTask.subtasks.length} subtask IDs to be sequential numeric IDs.`
+					`Исправлено ${updatedTask.subtasks.length} ID подзадач на последовательные числовые ID.`
 				);
 			}
 
-			// Preserve completed subtasks (Keep existing logic)
+			// Сохраняем выполненные подзадачи (оставляем существующую логику)
 			if (taskToUpdate.subtasks?.length > 0) {
 				if (!updatedTask.subtasks) {
 					report(
 						'warn',
-						'Subtasks removed by AI. Restoring original subtasks.'
+						'Подзадачи удалены ИИ. Восстанавливаем исходные подзадачи.'
 					);
 					updatedTask.subtasks = taskToUpdate.subtasks;
 				} else {
@@ -645,74 +622,74 @@ The changes described in the prompt should be thoughtfully applied to make the t
 						) {
 							report(
 								'warn',
-								`Completed subtask ${compSub.id} was modified or removed. Restoring.`
+								`Выполненная подзадача ${compSub.id} была изменена или удалена. Восстанавливаем.`
 							);
-							// Remove potentially modified version
+							// Удаляем потенциально измененную версию
 							updatedTask.subtasks = updatedTask.subtasks.filter(
 								(st) => st.id !== compSub.id
 							);
-							// Add back original
+							// Добавляем обратно исходную
 							updatedTask.subtasks.push(compSub);
 						}
 					});
-					// Deduplicate just in case
+					// Удаляем дубликаты на всякий случай
 					const subtaskIds = new Set();
 					updatedTask.subtasks = updatedTask.subtasks.filter((st) => {
 						if (!subtaskIds.has(st.id)) {
 							subtaskIds.add(st.id);
 							return true;
 						}
-						report('warn', `Duplicate subtask ID ${st.id} removed.`);
+						report('warn', `Удален дублирующий ID подзадачи ${st.id}.`);
 						return false;
 					});
 				}
 			}
-			// --- End Task Validation/Correction ---
+			// --- Конец валидации/коррекции задачи ---
 
-			// --- Update Task Data (Keep existing) ---
+			// --- Обновление данных задачи (оставляем существующие) ---
 			data.tasks[taskIndex] = updatedTask;
-			// --- End Update Task Data ---
+			// --- Конец обновления данных задачи ---
 
-			// --- Write File and Generate (Unchanged) ---
+			// --- Запись файла и генерация (без изменений) ---
 			writeJSON(tasksPath, data, projectRoot, currentTag);
-			report('success', `Successfully updated task ${taskId}`);
+			report('success', `Задача ${taskId} успешно обновлена`);
 			// await generateTaskFiles(tasksPath, path.dirname(tasksPath));
-			// --- End Write File ---
+			// --- Конец записи файла ---
 
-			// --- Display CLI Telemetry ---
+			// --- Отображение телеметрии CLI ---
 			if (outputFormat === 'text' && aiServiceResponse.telemetryData) {
 				displayAiUsageSummary(aiServiceResponse.telemetryData, 'cli'); // <<< ADD display
 			}
 
-			// --- Return Success with Telemetry ---
+			// --- Возврат успеха с телеметрией ---
 			return {
-				updatedTask: updatedTask, // Return the updated task object
+				updatedTask: updatedTask, // Возвращаем обновленный объект задачи
 				telemetryData: aiServiceResponse.telemetryData, // <<< ADD telemetryData
 				tagInfo: aiServiceResponse.tagInfo
 			};
 		} catch (error) {
-			// Catch errors from generateTextService
+			// Перехватываем ошибки от generateTextService
 			if (loadingIndicator) stopLoadingIndicator(loadingIndicator);
-			report('error', `Error during AI service call: ${error.message}`);
+			report('error', `Ошибка во время вызова сервиса ИИ: ${error.message}`);
 			if (error.message.includes('API key')) {
-				report('error', 'Please ensure API keys are configured correctly.');
+				report('error', 'Пожалуйста, убедитесь, что ключи API настроены правильно.');
 			}
-			throw error; // Re-throw error
+			throw error; // Повторно выбрасываем ошибку
 		}
 	} catch (error) {
-		// General error catch
-		// --- General Error Handling (Keep existing) ---
-		report('error', `Error updating task: ${error.message}`);
+		// Общий перехват ошибок
+		// --- Общая обработка ошибок (оставляем существующую) ---
+		report('error', `Ошибка при обновлении задачи: ${error.message}`);
 		if (outputFormat === 'text') {
-			console.error(chalk.red(`Error: ${error.message}`));
-			// ... helpful hints ...
+			console.error(chalk.red(`Ошибка: ${error.message}`));
+			// ... полезные подсказки ...
 			if (getDebugFlag(session)) console.error(error);
 			process.exit(1);
 		} else {
-			throw error; // Re-throw for MCP
+			throw error; // Повторно выбрасываем для MCP
 		}
-		return null; // Indicate failure in CLI case if process doesn't exit
-		// --- End General Error Handling ---
+		return null; // Указываем на сбой в случае CLI, если процесс не завершается
+		// --- Конец общей обработки ошибок ---
 	}
 }
 

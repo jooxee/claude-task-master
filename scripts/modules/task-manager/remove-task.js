@@ -27,7 +27,7 @@ async function removeTask(tasksPath, taskIds, context = {}) {
 
 	if (taskIdsToRemove.length === 0) {
 		results.success = false;
-		results.errors.push('No valid task IDs provided.');
+		results.errors.push('Не предоставлены действительные ID задач.');
 		return results;
 	}
 
@@ -35,7 +35,7 @@ async function removeTask(tasksPath, taskIds, context = {}) {
 		// Read the tasks file ONCE before the loop, preserving the full tagged structure
 		const rawData = readJSON(tasksPath, projectRoot); // Read raw data
 		if (!rawData) {
-			throw new Error(`Could not read tasks file at ${tasksPath}`);
+			throw new Error(`Не удалось прочитать файл задач по адресу ${tasksPath}`);
 		}
 
 		// Use the full tagged data if available, otherwise use the data as is
@@ -43,7 +43,7 @@ async function removeTask(tasksPath, taskIds, context = {}) {
 
 		const currentTag = tag || rawData.tag || 'master';
 		if (!fullTaggedData[currentTag] || !fullTaggedData[currentTag].tasks) {
-			throw new Error(`Tag '${currentTag}' not found or has no tasks.`);
+			throw new Error(`Тег '${currentTag}' не найден или не содержит задач.`);
 		}
 
 		const tasks = fullTaggedData[currentTag].tasks; // Work with tasks from the correct tag
@@ -53,7 +53,7 @@ async function removeTask(tasksPath, taskIds, context = {}) {
 		for (const taskId of taskIdsToRemove) {
 			// Check if the task ID exists *before* attempting removal
 			if (!taskExists(tasks, taskId)) {
-				const errorMsg = `Task with ID ${taskId} in tag '${currentTag}' not found or already removed.`;
+				const errorMsg = `Задача с ID ${taskId} в теге '${currentTag}' не найдена или уже удалена.`;
 				results.errors.push(errorMsg);
 				results.success = false; // Mark overall success as false if any error occurs
 				continue; // Skip to the next ID
@@ -70,7 +70,7 @@ async function removeTask(tasksPath, taskIds, context = {}) {
 					const parentTask = tasks.find((t) => t.id === parentTaskId);
 					if (!parentTask || !parentTask.subtasks) {
 						throw new Error(
-							`Parent task ${parentTaskId} or its subtasks not found for subtask ${taskId}`
+							`Родительская задача ${parentTaskId} или ее подзадачи не найдены для подзадачи ${taskId}`
 						);
 					}
 
@@ -80,7 +80,7 @@ async function removeTask(tasksPath, taskIds, context = {}) {
 					);
 					if (subtaskIndex === -1) {
 						throw new Error(
-							`Subtask ${subtaskId} not found in parent task ${parentTaskId}`
+							`Подзадача ${subtaskId} не найдена в родительской задаче ${parentTaskId}`
 						);
 					}
 
@@ -95,7 +95,7 @@ async function removeTask(tasksPath, taskIds, context = {}) {
 					parentTask.subtasks.splice(subtaskIndex, 1);
 
 					results.messages.push(
-						`Successfully removed subtask ${taskId} from tag '${currentTag}'`
+						`Успешно удалена подзадача ${taskId} из тега '${currentTag}'`
 					);
 				}
 				// Handle main task removal
@@ -104,7 +104,7 @@ async function removeTask(tasksPath, taskIds, context = {}) {
 					const taskIndex = tasks.findIndex((t) => t.id === taskIdNum);
 					if (taskIndex === -1) {
 						throw new Error(
-							`Task with ID ${taskId} not found in tag '${currentTag}'`
+							`Задача с ID ${taskId} не найдена в теге '${currentTag}'`
 						);
 					}
 
@@ -117,12 +117,12 @@ async function removeTask(tasksPath, taskIds, context = {}) {
 					tasks.splice(taskIndex, 1);
 
 					results.messages.push(
-						`Successfully removed task ${taskId} from tag '${currentTag}'`
+						`Успешно удалена задача ${taskId} из тега '${currentTag}'`
 					);
 				}
 			} catch (innerError) {
 				// Catch errors specific to processing *this* ID
-				const errorMsg = `Error processing ID ${taskId}: ${innerError.message}`;
+				const errorMsg = `Ошибка обработки ID ${taskId}: ${innerError.message}`;
 				results.errors.push(errorMsg);
 				results.success = false;
 				log('warn', errorMsg); // Log as warning and continue with next ID
@@ -183,9 +183,9 @@ async function removeTask(tasksPath, taskIds, context = {}) {
 				if (fs.existsSync(taskFileName)) {
 					try {
 						fs.unlinkSync(taskFileName);
-						results.messages.push(`Deleted task file: ${taskFileName}`);
+						results.messages.push(`Удален файл задачи: ${taskFileName}`);
 					} catch (unlinkError) {
-						const unlinkMsg = `Failed to delete task file ${taskFileName}: ${unlinkError.message}`;
+						const unlinkMsg = `Не удалось удалить файл задачи ${taskFileName}: ${unlinkError.message}`;
 						results.errors.push(unlinkMsg);
 						results.success = false;
 						log('warn', unlinkMsg);
@@ -199,15 +199,15 @@ async function removeTask(tasksPath, taskIds, context = {}) {
 				// 	projectRoot,
 				// 	tag: currentTag
 				// });
-				results.messages.push('Task files regenerated successfully.');
+				results.messages.push('Файлы задач успешно перегенерированы.');
 			} catch (genError) {
-				const genErrMsg = `Failed to regenerate task files: ${genError.message}`;
+				const genErrMsg = `Не удалось перегенерировать файлы задач: ${genError.message}`;
 				results.errors.push(genErrMsg);
 				results.success = false;
 				log('warn', genErrMsg);
 			}
 		} else if (results.errors.length === 0) {
-			results.messages.push('No tasks found matching the provided IDs.');
+			results.messages.push('Задачи, соответствующие предоставленным ID, не найдены.');
 		}
 
 		// Consolidate messages for final output
@@ -216,17 +216,17 @@ async function removeTask(tasksPath, taskIds, context = {}) {
 
 		return {
 			success: results.success,
-			message: finalMessage || 'No tasks were removed.',
+			message: finalMessage || 'Задачи не были удалены.',
 			error: finalError || null,
 			removedTasks: results.removedTasks
 		};
 	} catch (error) {
 		// Catch errors from reading file or other initial setup
-		log('error', `Error removing tasks: ${error.message}`);
+		log('error', `Ошибка удаления задач: ${error.message}`);
 		return {
 			success: false,
 			message: '',
-			error: `Operation failed: ${error.message}`,
+			error: `Операция не удалась: ${error.message}`,
 			removedTasks: []
 		};
 	}

@@ -23,12 +23,12 @@ async function addSubtask(
 	context = {}
 ) {
 	try {
-		log('info', `Adding subtask to parent task ${parentId}...`);
+		log('info', `Добавление подзадачи к родительской задаче ${parentId}...`);
 
 		// Read the existing tasks with proper context
 		const data = readJSON(tasksPath, context.projectRoot, context.tag);
 		if (!data || !data.tasks) {
-			throw new Error(`Invalid or missing tasks file at ${tasksPath}`);
+			throw new Error(`Неверный или отсутствующий файл задач по адресу ${tasksPath}`);
 		}
 
 		// Convert parent ID to number
@@ -37,7 +37,7 @@ async function addSubtask(
 		// Find the parent task
 		const parentTask = data.tasks.find((t) => t.id === parentIdNum);
 		if (!parentTask) {
-			throw new Error(`Parent task with ID ${parentIdNum} not found`);
+			throw new Error(`Родительская задача с ID ${parentIdNum} не найдена`);
 		}
 
 		// Initialize subtasks array if it doesn't exist
@@ -56,7 +56,7 @@ async function addSubtask(
 				(t) => t.id === existingTaskIdNum
 			);
 			if (existingTaskIndex === -1) {
-				throw new Error(`Task with ID ${existingTaskIdNum} not found`);
+				throw new Error(`Задача с ID ${existingTaskIdNum} не найдена`);
 			}
 
 			const existingTask = data.tasks[existingTaskIndex];
@@ -64,20 +64,20 @@ async function addSubtask(
 			// Check if task is already a subtask
 			if (existingTask.parentTaskId) {
 				throw new Error(
-					`Task ${existingTaskIdNum} is already a subtask of task ${existingTask.parentTaskId}`
+					`Задача ${existingTaskIdNum} уже является подзадачей задачи ${existingTask.parentTaskId}`
 				);
 			}
 
 			// Check for circular dependency
 			if (existingTaskIdNum === parentIdNum) {
-				throw new Error(`Cannot make a task a subtask of itself`);
+				throw new Error(`Невозможно сделать задачу подзадачей самой себя`);
 			}
 
 			// Check if parent task is a subtask of the task we're converting
 			// This would create a circular dependency
 			if (isTaskDependentOn(data.tasks, parentTask, existingTaskIdNum)) {
 				throw new Error(
-					`Cannot create circular dependency: task ${parentIdNum} is already a subtask or dependent of task ${existingTaskIdNum}`
+					`Невозможно создать циклическую зависимость: задача ${parentIdNum} уже является подзадачей или зависит от задачи ${existingTaskIdNum}`
 				);
 			}
 
@@ -103,7 +103,7 @@ async function addSubtask(
 
 			log(
 				'info',
-				`Converted task ${existingTaskIdNum} to subtask ${parentIdNum}.${newSubtaskId}`
+				`Задача ${existingTaskIdNum} преобразована в подзадачу ${parentIdNum}.${newSubtaskId}`
 			);
 		}
 		// Case 2: Create a new subtask
@@ -129,10 +129,10 @@ async function addSubtask(
 			// Add to parent's subtasks
 			parentTask.subtasks.push(newSubtask);
 
-			log('info', `Created new subtask ${parentIdNum}.${newSubtaskId}`);
+			log('info', `Создана новая подзадача ${parentIdNum}.${newSubtaskId}`);
 		} else {
 			throw new Error(
-				'Either existingTaskId or newSubtaskData must be provided'
+				'Необходимо предоставить либо existingTaskId, либо newSubtaskData'
 			);
 		}
 
@@ -141,13 +141,13 @@ async function addSubtask(
 
 		// Generate task files if requested
 		if (generateFiles) {
-			log('info', 'Regenerating task files...');
+			log('info', 'Повторное создание файлов задач...');
 			// await generateTaskFiles(tasksPath, path.dirname(tasksPath), context);
 		}
 
 		return newSubtask;
 	} catch (error) {
-		log('error', `Error adding subtask: ${error.message}`);
+		log('error', `Ошибка при добавлении подзадачи: ${error.message}`);
 		throw error;
 	}
 }

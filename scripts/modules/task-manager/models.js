@@ -51,12 +51,12 @@ function fetchOpenRouterModels() {
 						const parsedData = JSON.parse(data);
 						resolve(parsedData.data || []); // Return the array of models
 					} catch (e) {
-						console.error('Error parsing OpenRouter response:', e);
+						console.error('Ошибка разбора ответа OpenRouter:', e);
 						resolve(null); // Indicate failure
 					}
 				} else {
 					console.error(
-						`OpenRouter API request failed with status code: ${res.statusCode}`
+						`Запрос к OpenRouter API завершился с ошибкой со статусом: ${res.statusCode}`
 					);
 					resolve(null); // Indicate failure
 				}
@@ -64,7 +64,7 @@ function fetchOpenRouterModels() {
 		});
 
 		req.on('error', (e) => {
-			console.error('Error fetching OpenRouter models:', e);
+			console.error('Ошибка получения моделей OpenRouter:', e);
 			resolve(null); // Indicate failure
 		});
 		req.end();
@@ -109,12 +109,12 @@ function fetchOllamaModels(baseURL = 'http://localhost:11434/api') {
 							const parsedData = JSON.parse(data);
 							resolve(parsedData.models || []); // Return the array of models
 						} catch (e) {
-							console.error('Error parsing Ollama response:', e);
+							console.error('Ошибка разбора ответа Ollama:', e);
 							resolve(null); // Indicate failure
 						}
 					} else {
 						console.error(
-							`Ollama API request failed with status code: ${res.statusCode}`
+							`Запрос к Ollama API завершился с ошибкой со статусом: ${res.statusCode}`
 						);
 						resolve(null); // Indicate failure
 					}
@@ -122,12 +122,12 @@ function fetchOllamaModels(baseURL = 'http://localhost:11434/api') {
 			});
 
 			req.on('error', (e) => {
-				console.error('Error fetching Ollama models:', e);
+				console.error('Ошибка получения моделей Ollama:', e);
 				resolve(null); // Indicate failure
 			});
 			req.end();
 		} catch (e) {
-			console.error('Error parsing Ollama base URL:', e);
+			console.error('Ошибка разбора базового URL Ollama:', e);
 			resolve(null); // Indicate failure
 		}
 	});
@@ -151,7 +151,7 @@ async function getModelConfiguration(options = {}) {
 	};
 
 	if (!projectRoot) {
-		throw new Error('Project root is required but not found.');
+		throw new Error('Требуется корневой каталог проекта, но он не найден.');
 	}
 
 	// Use centralized config path finding instead of hardcoded path
@@ -160,16 +160,16 @@ async function getModelConfiguration(options = {}) {
 
 	log(
 		'debug',
-		`Checking for config file using findConfigPath, found: ${configPath}`
+		`Проверка файла конфигурации с помощью findConfigPath, найдено: ${configPath}`
 	);
 	log(
 		'debug',
-		`Checking config file using isConfigFilePresent(), exists: ${configExists}`
+		`Проверка файла конфигурации с помощью isConfigFilePresent(), существует: ${configExists}`
 	);
 
 	if (!configExists) {
 		throw new Error(
-			'The configuration file is missing. Run "task-master models --setup" to create it.'
+			'Файл конфигурации отсутствует. Запустите "task-master models --setup", чтобы создать его.'
 		);
 	}
 
@@ -248,11 +248,11 @@ async function getModelConfiguration(options = {}) {
 							}
 						: null
 				},
-				message: 'Successfully retrieved current model configuration'
+				message: 'Конфигурация текущей модели успешно получена'
 			}
 		};
 	} catch (error) {
-		report('error', `Error getting model configuration: ${error.message}`);
+		report('error', `Ошибка получения конфигурации модели: ${error.message}`);
 		return {
 			success: false,
 			error: {
@@ -281,7 +281,7 @@ async function getAvailableModelsList(options = {}) {
 	};
 
 	if (!projectRoot) {
-		throw new Error('Project root is required but not found.');
+		throw new Error('Требуется корневой каталог проекта, но он не найден.');
 	}
 
 	// Use centralized config path finding instead of hardcoded path
@@ -290,16 +290,16 @@ async function getAvailableModelsList(options = {}) {
 
 	log(
 		'debug',
-		`Checking for config file using findConfigPath, found: ${configPath}`
+		`Проверка файла конфигурации с помощью findConfigPath, найдено: ${configPath}`
 	);
 	log(
 		'debug',
-		`Checking config file using isConfigFilePresent(), exists: ${configExists}`
+		`Проверка файла конфигурации с помощью isConfigFilePresent(), существует: ${configExists}`
 	);
 
 	if (!configExists) {
 		throw new Error(
-			'The configuration file is missing. Run "task-master models --setup" to create it.'
+			'Файл конфигурации отсутствует. Запустите "task-master models --setup", чтобы создать его.'
 		);
 	}
 
@@ -312,7 +312,7 @@ async function getAvailableModelsList(options = {}) {
 				success: true,
 				data: {
 					models: [],
-					message: 'No available models found'
+					message: 'Доступные модели не найдены'
 				}
 			};
 		}
@@ -338,11 +338,11 @@ async function getAvailableModelsList(options = {}) {
 			success: true,
 			data: {
 				models: otherAvailableModels,
-				message: `Successfully retrieved ${otherAvailableModels.length} available models`
+				message: `Успешно получено ${otherAvailableModels.length} доступных моделей`
 			}
 		};
 	} catch (error) {
-		report('error', `Error getting available models: ${error.message}`);
+		report('error', `Ошибка получения доступных моделей: ${error.message}`);
 		return {
 			success: false,
 			error: {
@@ -374,7 +374,7 @@ async function setModel(role, modelId, options = {}) {
 	};
 
 	if (!projectRoot) {
-		throw new Error('Project root is required but not found.');
+		throw new Error('Требуется корневой каталог проекта, но он не найден.');
 	}
 
 	// Use centralized config path finding instead of hardcoded path
@@ -383,16 +383,16 @@ async function setModel(role, modelId, options = {}) {
 
 	log(
 		'debug',
-		`Checking for config file using findConfigPath, found: ${configPath}`
+		`Проверка файла конфигурации с помощью findConfigPath, найдено: ${configPath}`
 	);
 	log(
 		'debug',
-		`Checking config file using isConfigFilePresent(), exists: ${configExists}`
+		`Проверка файла конфигурации с помощью isConfigFilePresent(), существует: ${configExists}`
 	);
 
 	if (!configExists) {
 		throw new Error(
-			'The configuration file is missing. Run "task-master models --setup" to create it.'
+			'Файл конфигурации отсутствует. Запустите "task-master models --setup", чтобы создать его.'
 		);
 	}
 
@@ -402,7 +402,7 @@ async function setModel(role, modelId, options = {}) {
 			success: false,
 			error: {
 				code: 'INVALID_ROLE',
-				message: `Invalid role: ${role}. Must be one of: main, research, fallback.`
+				message: `Неверная роль: ${role}. Должна быть одной из: main, research, fallback.`
 			}
 		};
 	}
@@ -413,7 +413,7 @@ async function setModel(role, modelId, options = {}) {
 			success: false,
 			error: {
 				code: 'INVALID_MODEL_ID',
-				message: `Invalid model ID: ${modelId}. Must be a non-empty string.`
+				message: `Неверный ID модели: ${modelId}. Должна быть непустой строкой.`
 			}
 		};
 	}
@@ -436,14 +436,14 @@ async function setModel(role, modelId, options = {}) {
 				determinedProvider = providerHint;
 				report(
 					'info',
-					`Model ${modelId} found internally with matching provider hint ${determinedProvider}.`
+					`Модель ${modelId} найдена внутри с соответствующей подсказкой провайдера ${determinedProvider}.`
 				);
 			} else {
 				// Either not found internally, OR found but under a DIFFERENT provider than hinted.
 				// Proceed with custom logic based ONLY on the hint.
 				if (providerHint === CUSTOM_PROVIDERS.OPENROUTER) {
 					// Check OpenRouter ONLY because hint was openrouter
-					report('info', `Checking OpenRouter for ${modelId} (as hinted)...`);
+					report('info', `Проверка OpenRouter на ${modelId} (как указано)...`);
 					const openRouterModels = await fetchOpenRouterModels();
 
 					if (
@@ -454,21 +454,21 @@ async function setModel(role, modelId, options = {}) {
 
 						// Check if this is a free model (ends with :free)
 						if (modelId.endsWith(':free')) {
-							warningMessage = `Warning: OpenRouter free model '${modelId}' selected. Free models have significant limitations including lower context windows, reduced rate limits, and may not support advanced features like tool_use. Consider using the paid version '${modelId.replace(':free', '')}' for full functionality.`;
+							warningMessage = `Предупреждение: выбрана бесплатная модель OpenRouter '${modelId}'. Бесплатные модели имеют значительные ограничения, включая меньшие окна контекста, сниженные лимиты скорости и могут не поддерживать расширенные функции, такие как использование инструментов. Рассмотрите возможность использования платной версии '${modelId.replace(':free', '')}' для полной функциональности.`;
 						} else {
-							warningMessage = `Warning: Custom OpenRouter model '${modelId}' set. This model is not officially validated by Taskmaster and may not function as expected.`;
+							warningMessage = `Предупреждение: установлена пользовательская модель OpenRouter '${modelId}'. Эта модель официально не проверена Taskmaster и может работать не так, как ожидалось.`;
 						}
 
 						report('warn', warningMessage);
 					} else {
 						// Hinted as OpenRouter but not found in live check
 						throw new Error(
-							`Model ID "${modelId}" not found in the live OpenRouter model list. Please verify the ID and ensure it's available on OpenRouter.`
+							`ID модели "${modelId}" не найден в списке активных моделей OpenRouter. Пожалуйста, проверьте ID и убедитесь, что он доступен на OpenRouter.`
 						);
 					}
 				} else if (providerHint === CUSTOM_PROVIDERS.OLLAMA) {
 					// Check Ollama ONLY because hint was ollama
-					report('info', `Checking Ollama for ${modelId} (as hinted)...`);
+					report('info', `Проверка Ollama на ${modelId} (как указано)...`);
 
 					// Get the Ollama base URL from config
 					const ollamaBaseURL = getBaseUrlForRole(role, projectRoot);
@@ -477,23 +477,23 @@ async function setModel(role, modelId, options = {}) {
 					if (ollamaModels === null) {
 						// Connection failed - server probably not running
 						throw new Error(
-							`Unable to connect to Ollama server at ${ollamaBaseURL}. Please ensure Ollama is running and try again.`
+							`Не удалось подключиться к серверу Ollama по адресу ${ollamaBaseURL}. Пожалуйста, убедитесь, что Ollama запущена, и повторите попытку.`
 						);
 					} else if (ollamaModels.some((m) => m.model === modelId)) {
 						determinedProvider = CUSTOM_PROVIDERS.OLLAMA;
-						warningMessage = `Warning: Custom Ollama model '${modelId}' set. Ensure your Ollama server is running and has pulled this model. Taskmaster cannot guarantee compatibility.`;
+						warningMessage = `Предупреждение: установлена пользовательская модель Ollama '${modelId}'. Убедитесь, что ваш сервер Ollama запущен и загрузил эту модель. Taskmaster не может гарантировать совместимость.`;
 						report('warn', warningMessage);
 					} else {
 						// Server is running but model not found
 						const tagsUrl = `${ollamaBaseURL}/tags`;
 						throw new Error(
-							`Model ID "${modelId}" not found in the Ollama instance. Please verify the model is pulled and available. You can check available models with: curl ${tagsUrl}`
+							`ID модели "${modelId}" не найден в экземпляре Ollama. Пожалуйста, убедитесь, что модель загружена и доступна. Вы можете проверить доступные модели с помощью: curl ${tagsUrl}`
 						);
 					}
 				} else if (providerHint === CUSTOM_PROVIDERS.BEDROCK) {
 					// Set provider without model validation since Bedrock models are managed by AWS
 					determinedProvider = CUSTOM_PROVIDERS.BEDROCK;
-					warningMessage = `Warning: Custom Bedrock model '${modelId}' set. Please ensure the model ID is valid and accessible in your AWS account.`;
+					warningMessage = `Предупреждение: установлена пользовательская модель Bedrock '${modelId}'. Пожалуйста, убедитесь, что ID модели действителен и доступен в вашей учетной записи AWS.`;
 					report('warn', warningMessage);
 				} else if (providerHint === CUSTOM_PROVIDERS.CLAUDE_CODE) {
 					// Claude Code provider - check if model exists in our list
@@ -508,24 +508,24 @@ async function setModel(role, modelId, options = {}) {
 					if (claudeCodeModelData) {
 						// Update modelData to the found claude-code model
 						modelData = claudeCodeModelData;
-						report('info', `Setting Claude Code model '${modelId}'.`);
+						report('info', `Установка модели Claude Code '${modelId}'.`);
 					} else {
-						warningMessage = `Warning: Claude Code model '${modelId}' not found in supported models. Setting without validation.`;
+						warningMessage = `Предупреждение: модель Claude Code '${modelId}' не найдена в поддерживаемых моделях. Установка без проверки.`;
 						report('warn', warningMessage);
 					}
 				} else if (providerHint === CUSTOM_PROVIDERS.AZURE) {
 					// Set provider without model validation since Azure models are managed by Azure
 					determinedProvider = CUSTOM_PROVIDERS.AZURE;
-					warningMessage = `Warning: Custom Azure model '${modelId}' set. Please ensure the model deployment is valid and accessible in your Azure account.`;
+					warningMessage = `Предупреждение: установлена пользовательская модель Azure '${modelId}'. Пожалуйста, убедитесь, что развертывание модели действительно и доступно в вашей учетной записи Azure.`;
 					report('warn', warningMessage);
 				} else if (providerHint === CUSTOM_PROVIDERS.VERTEX) {
 					// Set provider without model validation since Vertex models are managed by Google Cloud
 					determinedProvider = CUSTOM_PROVIDERS.VERTEX;
-					warningMessage = `Warning: Custom Vertex AI model '${modelId}' set. Please ensure the model is valid and accessible in your Google Cloud project.`;
+					warningMessage = `Предупреждение: установлена пользовательская модель Vertex AI '${modelId}'. Пожалуйста, убедитесь, что модель действительна и доступна в вашем проекте Google Cloud.`;
 					report('warn', warningMessage);
 				} else {
 					// Invalid provider hint - should not happen with our constants
-					throw new Error(`Invalid provider hint received: ${providerHint}`);
+					throw new Error(`Получена неверная подсказка провайдера: ${providerHint}`);
 				}
 			}
 		} else {
@@ -535,7 +535,7 @@ async function setModel(role, modelId, options = {}) {
 				determinedProvider = modelData.provider;
 				report(
 					'info',
-					`Model ${modelId} found internally with provider ${determinedProvider}.`
+					`Модель ${modelId} найдена внутри с провайдером ${determinedProvider}.`
 				);
 			} else {
 				// Model not found and no provider hint was given
@@ -543,7 +543,7 @@ async function setModel(role, modelId, options = {}) {
 					success: false,
 					error: {
 						code: 'MODEL_NOT_FOUND_NO_HINT',
-						message: `Model ID "${modelId}" not found in Taskmaster's supported models. If this is a custom model, please specify the provider using --openrouter, --ollama, --bedrock, --azure, or --vertex.`
+						message: `ID модели "${modelId}" не найден в поддерживаемых моделях Taskmaster. Если это пользовательская модель, укажите провайдера с помощью --openrouter, --ollama, --bedrock, --azure или --vertex.`
 					}
 				};
 			}
@@ -558,7 +558,7 @@ async function setModel(role, modelId, options = {}) {
 				success: false,
 				error: {
 					code: 'PROVIDER_UNDETERMINED',
-					message: `Could not determine the provider for model ID "${modelId}".`
+					message: `Не удалось определить провайдера для ID модели "${modelId}".`
 				}
 			};
 		}
@@ -582,12 +582,12 @@ async function setModel(role, modelId, options = {}) {
 				success: false,
 				error: {
 					code: 'CONFIG_WRITE_ERROR',
-					message: 'Error writing updated configuration to configuration file'
+					message: 'Ошибка записи обновленной конфигурации в файл конфигурации'
 				}
 			};
 		}
 
-		const successMessage = `Successfully set ${role} model to ${modelId} (Provider: ${determinedProvider})`;
+		const successMessage = `Успешно установлена модель ${role} на ${modelId} (Провайдер: ${determinedProvider})`;
 		report('info', successMessage);
 
 		return {
@@ -601,7 +601,7 @@ async function setModel(role, modelId, options = {}) {
 			}
 		};
 	} catch (error) {
-		report('error', `Error setting ${role} model: ${error.message}`);
+		report('error', `Ошибка установки модели ${role}: ${error.message}`);
 		return {
 			success: false,
 			error: {
@@ -644,16 +644,16 @@ async function getApiKeyStatusReport(options = {}) {
 			};
 		});
 
-		report('info', 'Successfully generated API key status report.');
+		report('info', 'Отчет о состоянии ключа API успешно сгенерирован.');
 		return {
 			success: true,
 			data: {
 				report: statusReport,
-				message: 'API key status report generated.'
+				message: 'Отчет о состоянии ключа API сгенерирован.'
 			}
 		};
 	} catch (error) {
-		report('error', `Error generating API key status report: ${error.message}`);
+		report('error', `Ошибка генерации отчета о состоянии ключа API: ${error.message}`);
 		return {
 			success: false,
 			error: {

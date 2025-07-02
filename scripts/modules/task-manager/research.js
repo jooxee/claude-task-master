@@ -72,7 +72,7 @@ async function performResearch(
 	// Determine project root
 	const projectRoot = providedProjectRoot || findProjectRoot();
 	if (!projectRoot) {
-		throw new Error('Could not determine project root directory');
+		throw new Error('Не удалось определить корневой каталог проекта');
 	}
 
 	// Create consistent logger
@@ -89,7 +89,7 @@ async function performResearch(
 	// Show UI banner for CLI mode
 	if (outputFormat === 'text') {
 		console.log(
-			boxen(chalk.cyan.bold(`🔍 AI Research Query`), {
+			boxen(chalk.cyan.bold(`🔍 Запрос AI-исследования`), {
 				padding: 1,
 				borderColor: 'cyan',
 				borderStyle: 'round',
@@ -150,7 +150,7 @@ async function performResearch(
 							.map((id) => id.toString());
 
 						console.log(
-							chalk.gray('Provided tasks: ') +
+							chalk.gray('Предоставленные задачи: ') +
 								chalk.cyan(sortedProvidedIds.join(', '))
 						);
 
@@ -161,13 +161,13 @@ async function performResearch(
 								.map((id) => id.toString());
 
 							console.log(
-								chalk.gray('+ Auto-discovered related tasks: ') +
+								chalk.gray('+ Автоматически обнаруженные связанные задачи: ') +
 									chalk.cyan(sortedAutoIds.join(', '))
 							);
 						}
 					} else {
 						console.log(
-							chalk.gray('Auto-discovered relevant tasks: ') +
+							chalk.gray('Автоматически обнаруженные релевантные задачи: ') +
 								chalk.cyan(sortedTaskIds.join(', '))
 						);
 					}
@@ -175,7 +175,7 @@ async function performResearch(
 			}
 		} catch (error) {
 			// Silently continue without auto-discovered tasks if there's an error
-			logFn.debug(`Could not auto-discover tasks: ${error.message}`);
+			logFn.debug(`Не удалось автоматически обнаружить задачи: ${error.message}`);
 		}
 
 		const contextResult = await contextGatherer.gather({
@@ -217,14 +217,14 @@ async function performResearch(
 		// Only log detailed info in debug mode or MCP
 		if (outputFormat !== 'text') {
 			logFn.info(
-				`Calling AI service with research role, context size: ${tokenBreakdown.total} tokens (${gatheredContext.length} characters)`
+				`Вызов AI-сервиса с ролью исследования, размер контекста: ${tokenBreakdown.total} токенов (${gatheredContext.length} символов)`
 			);
 		}
 
 		// Start loading indicator for CLI mode
 		let loadingIndicator = null;
 		if (outputFormat === 'text') {
-			loadingIndicator = startLoadingIndicator('Researching with AI...\n');
+			loadingIndicator = startLoadingIndicator('Исследование с помощью AI...');
 		}
 
 		let aiResult;
@@ -321,7 +321,7 @@ async function performResearch(
 			};
 		}
 
-		logFn.success('Research query completed successfully');
+		logFn.success('Запрос исследования успешно завершен');
 
 		return {
 			query,
@@ -339,10 +339,11 @@ async function performResearch(
 				interactiveSaveInfo?.interactiveSaveOccurred || false
 		};
 	} catch (error) {
-		logFn.error(`Research query failed: ${error.message}`);
+		logFn.error(`Запрос исследования не удался: ${error.message}`);
 
 		if (outputFormat === 'text') {
-			console.error(chalk.red(`\n❌ Research failed: ${error.message}`));
+			console.error(chalk.red(`
+❌ Исследование не удалось: ${error.message}`));
 		}
 
 		throw error;
@@ -356,56 +357,56 @@ async function performResearch(
  * @returns {string} System prompt
  */
 function buildResearchSystemPrompt(detailLevel, projectRoot) {
-	const basePrompt = `You are an expert AI research assistant helping with a software development project. You have access to project context including tasks, files, and project structure.
+	const basePrompt = `Вы — экспертный AI-ассистент по исследованиям, помогающий в проекте по разработке программного обеспечения. У вас есть доступ к контексту проекта, включая задачи, файлы и структуру проекта.
 
-Your role is to provide comprehensive, accurate, and actionable research responses based on the user's query and the provided project context.`;
+Ваша роль — предоставлять всеобъемлющие, точные и действенные результаты исследований на основе запроса пользователя и предоставленного контекста проекта.`;
 
 	const detailInstructions = {
 		low: `
-**Response Style: Concise & Direct**
-- Provide brief, focused answers (2-4 paragraphs maximum)
-- Focus on the most essential information
-- Use bullet points for key takeaways
-- Avoid lengthy explanations unless critical
-- Skip pleasantries, introductions, and conclusions
-- No phrases like "Based on your project context" or "I'll provide guidance"
-- No summary outros or alignment statements
-- Get straight to the actionable information
-- Use simple, direct language - users want info, not explanation`,
+**Стиль ответа: Краткий и прямой**
+- Предоставляйте краткие, сфокусированные ответы (максимум 2-4 абзаца)
+- Сосредоточьтесь на самой важной информации
+- Используйте маркированные списки для ключевых выводов
+- Избегайте длинных объяснений, если это не критично
+- Пропускайте любезности, вступления и заключения
+- Никаких фраз типа "На основе контекста вашего проекта" или "Я предоставлю руководство"
+- Никаких итоговых резюме или заявлений о соответствии
+- Переходите сразу к действенной информации
+- Используйте простой, прямой язык - пользователям нужна информация, а не объяснения`,
 
 		medium: `
-**Response Style: Balanced & Comprehensive**
-- Provide thorough but well-structured responses (4-8 paragraphs)
-- Include relevant examples and explanations
-- Balance depth with readability
-- Use headings and bullet points for organization`,
+**Стиль ответа: Сбалансированный и всеобъемлющий**
+- Предоставляйте подробные, но хорошо структурированные ответы (4-8 абзацев)
+- Включайте соответствующие примеры и объяснения
+- Балансируйте глубину с читабельностью
+- Используйте заголовки и маркированные списки для организации`,
 
 		high: `
-**Response Style: Detailed & Exhaustive**
-- Provide comprehensive, in-depth analysis (8+ paragraphs)
-- Include multiple perspectives and approaches
-- Provide detailed examples, code snippets, and step-by-step guidance
-- Cover edge cases and potential pitfalls
-- Use clear structure with headings, subheadings, and lists`
+**Стиль ответа: Подробный и исчерпывающий**
+- Предоставляйте всеобъемлющий, углубленный анализ (8+ абзацев)
+- Включайте несколько точек зрения и подходов
+- Предоставляйте подробные примеры, фрагменты кода и пошаговые инструкции
+- Охватывайте крайние случаи и потенциальные ловушки
+- Используйте четкую структуру с заголовками, подзаголовками и списками`
 	};
 
 	return `${basePrompt}
 
 ${detailInstructions[detailLevel]}
 
-**Guidelines:**
-- Always consider the project context when formulating responses
-- Reference specific tasks, files, or project elements when relevant
-- Provide actionable insights that can be applied to the project
-- If the query relates to existing project tasks, suggest how the research applies to those tasks
-- Use markdown formatting for better readability
-- Be precise and avoid speculation unless clearly marked as such
+**Руководство:**
+- Всегда учитывайте контекст проекта при формулировании ответов
+- Ссылайтесь на конкретные задачи, файлы или элементы проекта, когда это уместно
+- Предоставляйте действенные идеи, которые могут быть применены к проекту
+- Если запрос относится к существующим задачам проекта, предложите, как исследование применяется к этим задачам
+- Используйте форматирование markdown для лучшей читабельности
+- Будьте точны и избегайте предположений, если они явно не обозначены как таковые
 
-**For LOW detail level specifically:**
-- Start immediately with the core information
-- No introductory phrases or context acknowledgments
-- No concluding summaries or project alignment statements
-- Focus purely on facts, steps, and actionable items`;
+**Для НИЗКОГО уровня детализации специально:**
+- Начинайте сразу с основной информации
+- Никаких вводных фраз или подтверждений контекста
+- Никаких заключительных резюме или заявлений о соответствии проекту
+- Сосредоточьтесь исключительно на фактах, шагах и действенных элементах`;
 }
 
 /**
@@ -416,23 +417,23 @@ ${detailInstructions[detailLevel]}
  * @returns {string} Complete user prompt
  */
 function buildResearchUserPrompt(query, gatheredContext, detailLevel) {
-	let prompt = `# Research Query
+	let prompt = `# Запрос исследования
 
 ${query}`;
 
 	if (gatheredContext && gatheredContext.trim()) {
 		prompt += `
 
-# Project Context
+# Контекст проекта
 
 ${gatheredContext}`;
 	}
 
 	prompt += `
 
-# Instructions
+# Инструкции
 
-Please research and provide a ${detailLevel}-detail response to the query above. Consider the project context provided and make your response as relevant and actionable as possible for this specific project.`;
+Пожалуйста, исследуйте и предоставьте ответ на запрос выше с уровнем детализации ${detailLevel}. Учитывайте предоставленный контекст проекта и сделайте ваш ответ максимально релевантным и действенным для этого конкретного проекта.`;
 
 	return prompt;
 }
@@ -453,7 +454,7 @@ function displayDetailedTokenBreakdown(
 	// Custom context
 	if (tokenBreakdown.customContext) {
 		parts.push(
-			chalk.cyan('Custom: ') +
+			chalk.cyan('Пользовательский: ') +
 				chalk.yellow(tokenBreakdown.customContext.tokens.toLocaleString())
 		);
 	}
@@ -475,9 +476,9 @@ function displayDetailedTokenBreakdown(
 			.join('\n');
 
 		parts.push(
-			chalk.cyan('Tasks: ') +
+			chalk.cyan('Задачи: ') +
 				chalk.yellow(totalTaskTokens.toLocaleString()) +
-				chalk.gray(` (${tokenBreakdown.tasks.length} items)`) +
+				chalk.gray(` (${tokenBreakdown.tasks.length} элементов)`) +
 				'\n' +
 				taskDetails
 		);
@@ -500,9 +501,9 @@ function displayDetailedTokenBreakdown(
 			.join('\n');
 
 		parts.push(
-			chalk.cyan('Files: ') +
+			chalk.cyan('Файлы: ') +
 				chalk.yellow(totalFileTokens.toLocaleString()) +
-				chalk.gray(` (${tokenBreakdown.files.length} files)`) +
+				chalk.gray(` (${tokenBreakdown.files.length} файлов)`) +
 				'\n' +
 				fileDetails
 		);
@@ -511,10 +512,10 @@ function displayDetailedTokenBreakdown(
 	// Project tree
 	if (tokenBreakdown.projectTree) {
 		parts.push(
-			chalk.cyan('Project Tree: ') +
+			chalk.cyan('Дерево проекта: ') +
 				chalk.yellow(tokenBreakdown.projectTree.tokens.toLocaleString()) +
 				chalk.gray(
-					` (${tokenBreakdown.projectTree.fileCount} files, ${tokenBreakdown.projectTree.dirCount} dirs)`
+					` (${tokenBreakdown.projectTree.fileCount} файлов, ${tokenBreakdown.projectTree.dirCount} каталогов)`
 				)
 		);
 	}
@@ -527,9 +528,9 @@ function displayDetailedTokenBreakdown(
 	].join('\n');
 
 	parts.push(
-		chalk.cyan('Prompts: ') +
+		chalk.cyan('Промпты: ') +
 			chalk.yellow(totalPromptTokens.toLocaleString()) +
-			chalk.gray(' (generated)') +
+			chalk.gray(' (сгенерировано)') +
 			'\n' +
 			promptDetails
 	);
@@ -538,7 +539,7 @@ function displayDetailedTokenBreakdown(
 	if (parts.length > 0) {
 		const content = parts.join('\n\n');
 		const tokenBox = boxen(content, {
-			title: chalk.blue.bold('Context Analysis'),
+			title: chalk.blue.bold('Анализ контекста'),
 			titleAlignment: 'left',
 			padding: { top: 1, bottom: 1, left: 2, right: 2 },
 			margin: { top: 0, bottom: 1 },
@@ -603,12 +604,12 @@ function processCodeBlocks(text) {
 function displayResearchResults(result, query, detailLevel, tokenBreakdown) {
 	// Header with query info
 	const header = boxen(
-		chalk.green.bold('Research Results') +
+		chalk.green.bold('Результаты исследования') +
 			'\n\n' +
-			chalk.gray('Query: ') +
+			chalk.gray('Запрос: ') +
 			chalk.white(query) +
 			'\n' +
-			chalk.gray('Detail Level: ') +
+			chalk.gray('Уровень детализации: ') +
 			chalk.cyan(detailLevel),
 		{
 			padding: { top: 1, bottom: 1, left: 2, right: 2 },
@@ -632,7 +633,7 @@ function displayResearchResults(result, query, detailLevel, tokenBreakdown) {
 	console.log(contentBox);
 
 	// Success footer
-	console.log(chalk.green('✅ Research completed'));
+	console.log(chalk.green('✅ Исследование завершено'));
 }
 
 /**
@@ -678,12 +679,12 @@ async function handleFollowUpQuestions(
 				{
 					type: 'list',
 					name: 'action',
-					message: 'What would you like to do next?',
+					message: 'Что бы вы хотели сделать дальше?',
 					choices: [
-						{ name: 'Ask a follow-up question', value: 'followup' },
-						{ name: 'Save to file', value: 'savefile' },
-						{ name: 'Save to task/subtask', value: 'save' },
-						{ name: 'Quit', value: 'quit' }
+						{ name: 'Задать дополнительный вопрос', value: 'followup' },
+						{ name: 'Сохранить в файл', value: 'savefile' },
+						{ name: 'Сохранить в задачу/подзадачу', value: 'save' },
+						{ name: 'Выйти', value: 'quit' }
 					],
 					pageSize: 4
 				}
@@ -724,10 +725,10 @@ async function handleFollowUpQuestions(
 					{
 						type: 'input',
 						name: 'followUpQuery',
-						message: 'Enter your follow-up question:',
+						message: 'Введите ваш дополнительный вопрос:',
 						validate: (input) => {
 							if (!input || input.trim().length === 0) {
-								return 'Please enter a valid question.';
+								return 'Пожалуйста, введите действительный вопрос.';
 							}
 							return true;
 						}
@@ -776,7 +777,7 @@ async function handleFollowUpQuestions(
 	} catch (error) {
 		// If there's an error with inquirer (e.g., non-interactive terminal),
 		// silently continue without follow-up functionality
-		logFn.debug(`Follow-up questions not available: ${error.message}`);
+		logFn.debug(`Последующие вопросы недоступны: ${error.message}`);
 	}
 
 	return { interactiveSaveOccurred };
@@ -806,16 +807,16 @@ async function handleSaveToTask(
 			{
 				type: 'input',
 				name: 'taskId',
-				message: 'Enter task ID (e.g., "15" for task or "15.2" for subtask):',
+				message: 'Введите ID задачи (например, "15" для задачи или "15.2" для подзадачи):',
 				validate: (input) => {
 					if (!input || input.trim().length === 0) {
-						return 'Please enter a task ID.';
+						return 'Пожалуйста, введите ID задачи.';
 					}
 
 					const trimmedInput = input.trim();
 					// Validate format: number or number.number
 					if (!/^\d+(\.\d+)?$/.test(trimmedInput)) {
-						return 'Invalid format. Use "15" for task or "15.2" for subtask.';
+						return 'Неверный формат. Используйте "15" для задачи или "15.2" для подзадачи.';
 					}
 
 					return true;
@@ -841,7 +842,7 @@ async function handleSaveToTask(
 
 		if (!fs.existsSync(tasksPath)) {
 			console.log(
-				chalk.red('❌ Tasks file not found. Please run task-master init first.')
+				chalk.red('❌ Файл задач не найден. Пожалуйста, сначала запустите task-master init.')
 			);
 			return;
 		}
@@ -851,7 +852,7 @@ async function handleSaveToTask(
 		const tag = context.tag || getCurrentTag(projectRoot) || 'master';
 		const data = readJSON(tasksPath, projectRoot, tag);
 		if (!data || !data.tasks) {
-			console.log(chalk.red('❌ No valid tasks found.'));
+			console.log(chalk.red('❌ Не найдено допустимых задач.'));
 			return;
 		}
 
@@ -863,7 +864,7 @@ async function handleSaveToTask(
 			const parentTask = data.tasks.find((t) => t.id === parentId);
 
 			if (!parentTask) {
-				console.log(chalk.red(`❌ Parent task ${parentId} not found.`));
+				console.log(chalk.red(`❌ Родительская задача ${parentId} не найдена.`));
 				return;
 			}
 
@@ -871,12 +872,12 @@ async function handleSaveToTask(
 				!parentTask.subtasks ||
 				!parentTask.subtasks.find((st) => st.id === subtaskId)
 			) {
-				console.log(chalk.red(`❌ Subtask ${trimmedTaskId} not found.`));
+				console.log(chalk.red(`❌ Подзадача ${trimmedTaskId} не найдена.`));
 				return;
 			}
 
 			// Save to subtask using updateSubtaskById
-			console.log(chalk.blue('💾 Saving research conversation to subtask...'));
+			console.log(chalk.blue('💾 Сохранение результатов исследования в подзадачу...'));
 
 			await updateSubtaskById(
 				tasksPath,
@@ -889,7 +890,7 @@ async function handleSaveToTask(
 
 			console.log(
 				chalk.green(
-					`✅ Research conversation saved to subtask ${trimmedTaskId}`
+					`✅ Результаты исследования сохранены в подзадачу ${trimmedTaskId}`
 				)
 			);
 		} else {
@@ -898,12 +899,12 @@ async function handleSaveToTask(
 			const task = data.tasks.find((t) => t.id === taskIdNum);
 
 			if (!task) {
-				console.log(chalk.red(`❌ Task ${trimmedTaskId} not found.`));
+				console.log(chalk.red(`❌ Задача ${trimmedTaskId} не найдена.`));
 				return;
 			}
 
 			// Save to task using updateTaskById with append mode
-			console.log(chalk.blue('💾 Saving research conversation to task...'));
+			console.log(chalk.blue('💾 Сохранение результатов исследования в задачу...'));
 
 			await updateTaskById(
 				tasksPath,
@@ -916,14 +917,14 @@ async function handleSaveToTask(
 			);
 
 			console.log(
-				chalk.green(`✅ Research conversation saved to task ${trimmedTaskId}`)
+				chalk.green(`✅ Результаты исследования сохранены в задачу ${trimmedTaskId}`)
 			);
 		}
 
 		return true; // Indicate successful save
 	} catch (error) {
-		console.log(chalk.red(`❌ Error saving conversation: ${error.message}`));
-		logFn.error(`Error saving conversation: ${error.message}`);
+		console.log(chalk.red(`❌ Ошибка сохранения разговора: ${error.message}`));
+		logFn.error(`Ошибка сохранения разговора: ${error.message}`);
 		return false; // Indicate failed save
 	}
 }
@@ -981,15 +982,15 @@ async function handleSaveToFile(
 
 		const relativePath = path.relative(projectRoot, filePath);
 		console.log(
-			chalk.green(`✅ Research saved to: ${chalk.cyan(relativePath)}`)
+			chalk.green(`✅ Исследование сохранено в: ${chalk.cyan(relativePath)}`)
 		);
 
-		logFn.success(`Research conversation saved to ${relativePath}`);
+		logFn.success(`Разговор исследования сохранен в ${relativePath}`);
 
 		return filePath;
 	} catch (error) {
-		console.log(chalk.red(`❌ Error saving research file: ${error.message}`));
-		logFn.error(`Error saving research file: ${error.message}`);
+		console.log(chalk.red(`❌ Ошибка сохранения файла исследования: ${error.message}`));
+		logFn.error(`Ошибка сохранения файла исследования: ${error.message}`);
 		throw error;
 	}
 }

@@ -64,7 +64,7 @@ async function updateSubtaskById(
 	let loadingIndicator = null;
 
 	try {
-		report('info', `Updating subtask ${subtaskId} with prompt: "${prompt}"`);
+		report('info', `Обновление подзадачи ${subtaskId} с промптом: "${prompt}"`);
 
 		if (
 			!subtaskId ||
@@ -72,23 +72,23 @@ async function updateSubtaskById(
 			!subtaskId.includes('.')
 		) {
 			throw new Error(
-				`Invalid subtask ID format: ${subtaskId}. Subtask ID must be in format "parentId.subtaskId"`
+				`Неверный формат ID подзадачи: ${subtaskId}. ID подзадачи должен быть в формате "parentId.subtaskId"`
 			);
 		}
 
 		if (!prompt || typeof prompt !== 'string' || prompt.trim() === '') {
 			throw new Error(
-				'Prompt cannot be empty. Please provide context for the subtask update.'
+				'Промпт не может быть пустым. Пожалуйста, предоставьте контекст для обновления подзадачи.'
 			);
 		}
 
 		if (!fs.existsSync(tasksPath)) {
-			throw new Error(`Tasks file not found at path: ${tasksPath}`);
+			throw new Error(`Файл задач не найден по пути: ${tasksPath}`);
 		}
 
 		const projectRoot = providedProjectRoot || findProjectRoot();
 		if (!projectRoot) {
-			throw new Error('Could not determine project root directory');
+			throw new Error('Не удалось определить корневой каталог проекта');
 		}
 
 		// Determine the tag to use
@@ -97,7 +97,7 @@ async function updateSubtaskById(
 		const data = readJSON(tasksPath, projectRoot, currentTag);
 		if (!data || !data.tasks) {
 			throw new Error(
-				`No valid tasks found in ${tasksPath}. The file may be corrupted or have an invalid format.`
+				`В ${tasksPath} не найдено допустимых задач. Файл может быть поврежден или иметь неверный формат.`
 			);
 		}
 
@@ -112,19 +112,19 @@ async function updateSubtaskById(
 			subtaskIdNum <= 0
 		) {
 			throw new Error(
-				`Invalid subtask ID format: ${subtaskId}. Both parent ID and subtask ID must be positive integers.`
+				`Неверный формат ID подзадачи: ${subtaskId}. Оба ID родительской задачи и подзадачи должны быть положительными целыми числами.`
 			);
 		}
 
 		const parentTask = data.tasks.find((task) => task.id === parentId);
 		if (!parentTask) {
 			throw new Error(
-				`Parent task with ID ${parentId} not found. Please verify the task ID and try again.`
+				`Родительская задача с ID ${parentId} не найдена. Пожалуйста, проверьте ID задачи и повторите попытку.`
 			);
 		}
 
 		if (!parentTask.subtasks || !Array.isArray(parentTask.subtasks)) {
-			throw new Error(`Parent task ${parentId} has no subtasks.`);
+			throw new Error(`Родительская задача ${parentId} не имеет подзадач.`);
 		}
 
 		const subtaskIndex = parentTask.subtasks.findIndex(
@@ -132,7 +132,7 @@ async function updateSubtaskById(
 		);
 		if (subtaskIndex === -1) {
 			throw new Error(
-				`Subtask with ID ${subtaskId} not found. Please verify the subtask ID and try again.`
+				`Подзадача с ID ${subtaskId} не найдена. Пожалуйста, проверьте ID подзадачи и повторите попытку.`
 			);
 		}
 
@@ -163,7 +163,7 @@ async function updateSubtaskById(
 				gatheredContext = contextResult;
 			}
 		} catch (contextError) {
-			report('warn', `Could not gather context: ${contextError.message}`);
+			report('warn', `Не удалось собрать контекст: ${contextError.message}`);
 		}
 		// --- End Context Gathering ---
 
@@ -171,8 +171,8 @@ async function updateSubtaskById(
 			const table = new Table({
 				head: [
 					chalk.cyan.bold('ID'),
-					chalk.cyan.bold('Title'),
-					chalk.cyan.bold('Status')
+					chalk.cyan.bold('Заголовок'),
+					chalk.cyan.bold('Статус')
 				],
 				colWidths: [10, 55, 10]
 			});
@@ -182,7 +182,7 @@ async function updateSubtaskById(
 				getStatusWithColor(subtask.status)
 			]);
 			console.log(
-				boxen(chalk.white.bold(`Updating Subtask #${subtaskId}`), {
+				boxen(chalk.white.bold(`Обновление подзадачи #${subtaskId}`), {
 					padding: 1,
 					borderColor: 'blue',
 					borderStyle: 'round',
@@ -192,8 +192,8 @@ async function updateSubtaskById(
 			console.log(table.toString());
 			loadingIndicator = startLoadingIndicator(
 				useResearch
-					? 'Updating subtask with research...'
-					: 'Updating subtask...'
+					? 'Обновление подзадачи с исследованием...'
+					: 'Обновление подзадачи...'
 			);
 		}
 
@@ -230,26 +230,31 @@ ${nextSubtask ? `Next Subtask: ${JSON.stringify(nextSubtask)}` : ''}
 Current Subtask Details (for context only):\n${subtask.details || '(No existing details)'}
 `;
 
-			const systemPrompt = `You are an AI assistant helping to update a subtask. You will be provided with the subtask's existing details, context about its parent and sibling tasks, and a user request string.
+			const systemPrompt = `Вы — AI-ассистент, помогающий обновить подзадачу. Вам будут предоставлены существующие детали подзадачи, контекст о ее родительской и соседних задачах, а также строка запроса пользователя.
 
-Your Goal: Based *only* on the user's request and all the provided context (including existing details if relevant to the request), GENERATE the new text content that should be added to the subtask's details.
-Focus *only* on generating the substance of the update.
+Ваша цель: основываясь *только* на запросе пользователя и всем предоставленном контексте (включая существующие детали, если они относятся к запросу), СГЕНЕРИРОВАТЬ новое текстовое содержимое, которое должно быть добавлено в детали подзадачи.
+Сосредоточьтесь *только* на генерации сути обновления.
 
-Output Requirements:
-1. Return *only* the newly generated text content as a plain string. Do NOT return a JSON object or any other structured data.
-2. Your string response should NOT include any of the subtask's original details, unless the user's request explicitly asks to rephrase, summarize, or directly modify existing text.
-3. Do NOT include any timestamps, XML-like tags, markdown, or any other special formatting in your string response.
-4. Ensure the generated text is concise yet complete for the update based on the user request. Avoid conversational fillers or explanations about what you are doing (e.g., do not start with "Okay, here's the update...").`;
+Требования к выводу:
+1. Возвращайте *только* вновь сгенерированное текстовое содержимое в виде обычной строки. НЕ возвращайте объект JSON или любые другие структурированные данные.
+2. Ваш строковый ответ НЕ должен включать никаких исходных деталей подзадачи, если запрос пользователя явно не просит перефразировать, резюмировать или напрямую изменить существующий текст.
+3. НЕ включайте никаких временных меток, XML-подобных тегов, markdown или любого другого специального форматирования в ваш строковый ответ.
+4. Убедитесь, что сгенерированный текст является кратким, но полным для обновления на основе запроса пользователя. Избегайте разговорных заполнителей или объяснений того, что вы делаете (например, не начинайте с "Хорошо, вот обновление...").`;
 
 			// Pass the existing subtask.details in the user prompt for the AI's context.
-			let userPrompt = `Task Context:\n${contextString}\n\nUser Request: "${prompt}"\n\nBased on the User Request and all the Task Context (including current subtask details provided above), what is the new information or text that should be appended to this subtask's details? Return ONLY this new text as a plain string.`;
+			let userPrompt = `Контекст задачи:
+${contextString}
+
+Запрос пользователя: "${prompt}"
+
+На основе запроса пользователя и всего контекста задачи (включая текущие детали подзадачи, предоставленные выше), какая новая информация или текст должны быть добавлены в детали этой подзадачи? Возвращайте ТОЛЬКО этот новый текст в виде обычной строки.`
 
 			if (gatheredContext) {
 				userPrompt += `\n\n# Additional Project Context\n\n${gatheredContext}`;
 			}
 
 			const role = useResearch ? 'research' : 'main';
-			report('info', `Using AI text service with role: ${role}`);
+			report('info', `Использование AI-текстового сервиса с ролью: ${role}`);
 
 			aiServiceResponse = await generateTextService({
 				prompt: userPrompt,
@@ -272,7 +277,7 @@ Output Requirements:
 				generatedContentString = '';
 				report(
 					'warn',
-					'AI service response did not contain expected text string.'
+					'Ответ AI-сервиса не содержал ожидаемой текстовой строки.'
 				);
 			}
 
@@ -281,7 +286,7 @@ Output Requirements:
 				loadingIndicator = null;
 			}
 		} catch (aiError) {
-			report('error', `AI service call failed: ${aiError.message}`);
+			report('error', `Вызов AI-сервиса не удался: ${aiError.message}`);
 			if (outputFormat === 'text' && loadingIndicator) {
 				stopLoadingIndicator(loadingIndicator);
 				loadingIndicator = null;
@@ -300,7 +305,7 @@ Output Requirements:
 		} else {
 			report(
 				'warn',
-				'AI response was empty or whitespace after trimming. Original details remain unchanged.'
+				'Ответ AI был пустым или содержал только пробелы после обрезки. Исходные детали остаются без изменений.'
 			);
 			newlyAddedSnippet = 'No new details were added by the AI.';
 		}
@@ -340,7 +345,7 @@ Output Requirements:
 			console.log('>>> DEBUG: writeJSON call completed.');
 		}
 
-		report('success', `Successfully updated subtask ${subtaskId}`);
+		report('success', `Подзадача ${subtaskId} успешно обновлена`);
 		// await generateTaskFiles(tasksPath, path.dirname(tasksPath));
 
 		if (outputFormat === 'text') {
@@ -350,13 +355,13 @@ Output Requirements:
 			}
 			console.log(
 				boxen(
-					chalk.green(`Successfully updated subtask #${subtaskId}`) +
+					chalk.green(`Подзадача #${subtaskId} успешно обновлена`) +
 						'\n\n' +
-						chalk.white.bold('Title:') +
+						chalk.white.bold('Заголовок:') +
 						' ' +
 						updatedSubtask.title +
 						'\n\n' +
-						chalk.white.bold('Newly Added Snippet:') +
+						chalk.white.bold('Недавно добавленный фрагмент:') +
 						'\n' +
 						chalk.white(newlyAddedSnippet),
 					{ padding: 1, borderColor: 'green', borderStyle: 'round' }
@@ -378,16 +383,17 @@ Output Requirements:
 			stopLoadingIndicator(loadingIndicator);
 			loadingIndicator = null;
 		}
-		report('error', `Error updating subtask: ${error.message}`);
+		report('error', `Ошибка обновления подзадачи: ${error.message}`);
 		if (outputFormat === 'text') {
-			console.error(chalk.red(`Error: ${error.message}`));
+			console.error(chalk.red(`Ошибка: ${error.message}`));
 			if (error.message?.includes('ANTHROPIC_API_KEY')) {
 				console.log(
-					chalk.yellow('\nTo fix this issue, set your Anthropic API key:')
+					chalk.yellow('
+Чтобы исправить эту проблему, установите свой ключ API Anthropic:')
 				);
 				console.log('  export ANTHROPIC_API_KEY=your_api_key_here');
 			} else if (error.message?.includes('PERPLEXITY_API_KEY')) {
-				console.log(chalk.yellow('\nTo fix this issue:'));
+				console.log(chalk.yellow('\nЧтобы исправить эту проблему:'));
 				console.log(
 					'  1. Set your Perplexity API key: export PERPLEXITY_API_KEY=your_api_key_here'
 				);
@@ -397,13 +403,13 @@ Output Requirements:
 			} else if (error.message?.includes('overloaded')) {
 				console.log(
 					chalk.yellow(
-						'\nAI model overloaded, and fallback failed or was unavailable:'
+						'\nМодель AI перегружена, и откат не удался или был недоступен:'
 					)
 				);
 				console.log('  1. Try again in a few minutes.');
 				console.log('  2. Ensure PERPLEXITY_API_KEY is set for fallback.');
 			} else if (error.message?.includes('not found')) {
-				console.log(chalk.yellow('\nTo fix this issue:'));
+				console.log(chalk.yellow('\nЧтобы исправить эту проблему:'));
 				console.log(
 					'  1. Run task-master list --with-subtasks to see all available subtask IDs'
 				);
@@ -416,7 +422,7 @@ Output Requirements:
 			) {
 				console.log(
 					chalk.yellow(
-						'\nThe AI model returned an empty or invalid response. This might be due to the prompt or API issues. Try rephrasing or trying again later.'
+						'\nМодель AI вернула пустой или недействительный ответ. Это может быть связано с промптом или проблемами API. Попробуйте перефразировать или повторить попытку позже.'
 					)
 				);
 			}

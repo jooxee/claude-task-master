@@ -44,7 +44,7 @@ function listTasks(
 		const projectRoot = context.projectRoot || null;
 		const data = readJSON(tasksPath, projectRoot, tag); // Pass projectRoot to readJSON
 		if (!data || !data.tasks) {
-			throw new Error(`No valid tasks found in ${tasksPath}`);
+			throw new Error(`В ${tasksPath} не найдено допустимых задач`);
 		}
 
 		// Add complexity scores to tasks if report exists
@@ -346,35 +346,35 @@ function listTasks(
 
 		// Create dashboard content
 		const projectDashboardContent =
-			chalk.white.bold('Project Dashboard') +
+			chalk.white.bold('Панель управления проектом') +
 			'\n' +
-			`Tasks Progress: ${chalk.greenBright(taskProgressBar)} ${completionPercentage.toFixed(0)}%\n` +
-			`Done: ${chalk.green(doneCount)}  In Progress: ${chalk.blue(inProgressCount)}  Pending: ${chalk.yellow(pendingCount)}  Blocked: ${chalk.red(blockedCount)}  Deferred: ${chalk.gray(deferredCount)}  Cancelled: ${chalk.gray(cancelledCount)}\n\n` +
-			`Subtasks Progress: ${chalk.cyan(subtaskProgressBar)} ${subtaskCompletionPercentage.toFixed(0)}%\n` +
-			`Completed: ${chalk.green(completedSubtasks)}/${totalSubtasks}  In Progress: ${chalk.blue(inProgressSubtasks)}  Pending: ${chalk.yellow(pendingSubtasks)}  Blocked: ${chalk.red(blockedSubtasks)}  Deferred: ${chalk.gray(deferredSubtasks)}  Cancelled: ${chalk.gray(cancelledSubtasks)}\n\n` +
-			chalk.cyan.bold('Priority Breakdown:') +
+			`Прогресс задач: ${chalk.greenBright(taskProgressBar)} ${completionPercentage.toFixed(0)}%\n` +
+			`Выполнено: ${chalk.green(doneCount)}  В процессе: ${chalk.blue(inProgressCount)}  Ожидание: ${chalk.yellow(pendingCount)}  Заблокировано: ${chalk.red(blockedCount)}  Отложено: ${chalk.gray(deferredCount)}  Отменено: ${chalk.gray(cancelledCount)}\n\n` +
+			`Прогресс подзадач: ${chalk.cyan(subtaskProgressBar)} ${subtaskCompletionPercentage.toFixed(0)}%\n` +
+			`Выполнено: ${chalk.green(completedSubtasks)}/${totalSubtasks}  В процессе: ${chalk.blue(inProgressSubtasks)}  Ожидание: ${chalk.yellow(pendingSubtasks)}  Заблокировано: ${chalk.red(blockedSubtasks)}  Отложено: ${chalk.gray(deferredSubtasks)}  Отменено: ${chalk.gray(cancelledSubtasks)}\n\n` +
+			chalk.cyan.bold('Разбивка по приоритетам:') +
 			'\n' +
-			`${chalk.red('•')} ${chalk.white('High priority:')} ${data.tasks.filter((t) => t.priority === 'high').length}\n` +
-			`${chalk.yellow('•')} ${chalk.white('Medium priority:')} ${data.tasks.filter((t) => t.priority === 'medium').length}\n` +
-			`${chalk.green('•')} ${chalk.white('Low priority:')} ${data.tasks.filter((t) => t.priority === 'low').length}`;
+			`${chalk.red('•')} ${chalk.white('Высокий приоритет:')} ${data.tasks.filter((t) => t.priority === 'high').length}\n` +
+			`${chalk.yellow('•')} ${chalk.white('Средний приоритет:')} ${data.tasks.filter((t) => t.priority === 'medium').length}\n` +
+			`${chalk.green('•')} ${chalk.white('Низкий приоритет:')} ${data.tasks.filter((t) => t.priority === 'low').length}`;
 
 		const dependencyDashboardContent =
-			chalk.white.bold('Dependency Status & Next Task') +
+			chalk.white.bold('Состояние зависимостей и следующая задача') +
 			'\n' +
-			chalk.cyan.bold('Dependency Metrics:') +
+			chalk.cyan.bold('Метрики зависимостей:') +
 			'\n' +
-			`${chalk.green('•')} ${chalk.white('Tasks with no dependencies:')} ${tasksWithNoDeps}\n` +
-			`${chalk.green('•')} ${chalk.white('Tasks ready to work on:')} ${tasksReadyToWork}\n` +
-			`${chalk.yellow('•')} ${chalk.white('Tasks blocked by dependencies:')} ${tasksWithUnsatisfiedDeps}\n` +
-			`${chalk.magenta('•')} ${chalk.white('Most depended-on task:')} ${mostDependedOnTask ? chalk.cyan(`#${mostDependedOnTaskId} (${maxDependents} dependents)`) : chalk.gray('None')}\n` +
-			`${chalk.blue('•')} ${chalk.white('Avg dependencies per task:')} ${avgDependenciesPerTask.toFixed(1)}\n\n` +
-			chalk.cyan.bold('Next Task to Work On:') +
+			`${chalk.green('•')} ${chalk.white('Задачи без зависимостей:')} ${tasksWithNoDeps}\n` +
+			`${chalk.green('•')} ${chalk.white('Задачи, готовые к работе:')} ${tasksReadyToWork}\n` +
+			`${chalk.yellow('•')} ${chalk.white('Задачи, заблокированные зависимостями:')} ${tasksWithUnsatisfiedDeps}\n` +
+			`${chalk.magenta('•')} ${chalk.white('Задача с наибольшим количеством зависимостей:')} ${mostDependedOnTask ? chalk.cyan(`#${mostDependedOnTaskId} (${maxDependents} зависимых)`) : chalk.gray('Нет')}\n` +
+			`${chalk.blue('•')} ${chalk.white('Среднее количество зависимостей на задачу:')} ${avgDependenciesPerTask.toFixed(1)}\n\n` +
+			chalk.cyan.bold('Следующая задача для работы:') +
 			'\n' +
-			`ID: ${chalk.cyan(nextItem ? nextItem.id : 'N/A')} - ${nextItem ? chalk.white.bold(truncate(nextItem.title, 40)) : chalk.yellow('No task available')}
+			`ID: ${chalk.cyan(nextItem ? nextItem.id : 'Н/Д')} - ${nextItem ? chalk.white.bold(truncate(nextItem.title, 40)) : chalk.yellow('Нет доступных задач')}
 ` +
-			`Priority: ${nextItem ? chalk.white(nextItem.priority || 'medium') : ''}  Dependencies: ${nextItem ? formatDependenciesWithStatus(nextItem.dependencies, data.tasks, true, complexityReport) : ''}
+			`Приоритет: ${nextItem ? chalk.white(nextItem.priority || 'medium') : ''}  Зависимости: ${nextItem ? formatDependenciesWithStatus(nextItem.dependencies, data.tasks, true, complexityReport) : ''}
 ` +
-			`Complexity: ${nextItem && nextItem.complexityScore ? getComplexityWithColor(nextItem.complexityScore) : chalk.gray('N/A')}`;
+			`Сложность: ${nextItem && nextItem.complexityScore ? getComplexityWithColor(nextItem.complexityScore) : chalk.gray('Н/Д')}`;
 
 		// Calculate width for side-by-side display
 		// Box borders, padding take approximately 4 chars on each side
@@ -460,8 +460,8 @@ function listTasks(
 			console.log(
 				boxen(
 					statusFilter
-						? chalk.yellow(`No tasks with status '${statusFilter}' found`)
-						: chalk.yellow('No tasks found'),
+						? chalk.yellow(`Задач со статусом '${statusFilter}' не найдено`)
+						: chalk.yellow('Задачи не найдены'),
 					{ padding: 1, borderColor: 'yellow', borderStyle: 'round' }
 				)
 			);
@@ -512,11 +512,11 @@ function listTasks(
 		const table = new Table({
 			head: [
 				chalk.cyan.bold('ID'),
-				chalk.cyan.bold('Title'),
-				chalk.cyan.bold('Status'),
-				chalk.cyan.bold('Priority'),
-				chalk.cyan.bold('Dependencies'),
-				chalk.cyan.bold('Complexity')
+				chalk.cyan.bold('Заголовок'),
+				chalk.cyan.bold('Статус'),
+				chalk.cyan.bold('Приоритет'),
+				chalk.cyan.bold('Зависимости'),
+				chalk.cyan.bold('Сложность')
 			],
 			colWidths: [
 				idWidth,
@@ -650,12 +650,12 @@ function listTasks(
 		try {
 			console.log(table.toString());
 		} catch (err) {
-			log('error', `Error rendering table: ${err.message}`);
+			log('error', `Ошибка рендеринга таблицы: ${err.message}`);
 
 			// Fall back to simpler output
 			console.log(
 				chalk.yellow(
-					'\nFalling back to simple task list due to terminal width constraints:'
+					'\nВозврат к простому списку задач из-за ограничений ширины терминала:'
 				)
 			);
 			filteredTasks.forEach((task) => {
@@ -667,9 +667,10 @@ function listTasks(
 
 		// Show filter info if applied
 		if (statusFilter) {
-			console.log(chalk.yellow(`\nFiltered by status: ${statusFilter}`));
+			console.log(chalk.yellow(`
+Отфильтровано по статусу: ${statusFilter}`));
 			console.log(
-				chalk.yellow(`Showing ${filteredTasks.length} of ${totalTasks} tasks`)
+				chalk.yellow(`Показано ${filteredTasks.length} из ${totalTasks} задач`)
 			);
 		}
 
@@ -693,7 +694,7 @@ function listTasks(
 				parentTaskForSubtasks.subtasks &&
 				parentTaskForSubtasks.subtasks.length > 0
 			) {
-				subtasksSection = `\n\n${chalk.white.bold('Subtasks:')}\n`;
+				subtasksSection = `\n\n${chalk.white.bold('Подзадачи:')}\n`;
 				subtasksSection += parentTaskForSubtasks.subtasks
 					.map((subtask) => {
 						// Add complexity to subtask before display
@@ -721,27 +722,27 @@ function listTasks(
 				boxen(
 					chalk.hex('#FF8800').bold(
 						// Use nextItem.id and nextItem.title
-						`🔥 Next Task to Work On: #${nextItem.id} - ${nextItem.title}`
+						`🔥 Следующая задача для работы: #${nextItem.id} - ${nextItem.title}`
 					) +
 						'\n\n' +
 						// Use nextItem.priority, nextItem.status, nextItem.dependencies
-						`${chalk.white('Priority:')} ${priorityColors[nextItem.priority || 'medium'](nextItem.priority || 'medium')}   ${chalk.white('Status:')} ${getStatusWithColor(nextItem.status, true)}\n` +
-						`${chalk.white('Dependencies:')} ${nextItem.dependencies && nextItem.dependencies.length > 0 ? formatDependenciesWithStatus(nextItem.dependencies, data.tasks, true, complexityReport) : chalk.gray('None')}\n\n` +
+						`${chalk.white('Приоритет:')} ${priorityColors[nextItem.priority || 'medium'](nextItem.priority || 'medium')}   ${chalk.white('Статус:')} ${getStatusWithColor(nextItem.status, true)}\n` +
+						`${chalk.white('Зависимости:')} ${nextItem.dependencies && nextItem.dependencies.length > 0 ? formatDependenciesWithStatus(nextItem.dependencies, data.tasks, true, complexityReport) : chalk.gray('Нет')}\n\n` +
 						// Use nextTask.description (Note: findNextTask doesn't return description, need to fetch original task/subtask for this)
 						// *** Fetching original item for description and details ***
-						`${chalk.white('Description:')} ${getWorkItemDescription(nextItem, data.tasks)}` +
+						`${chalk.white('Описание:')} ${getWorkItemDescription(nextItem, data.tasks)}` +
 						subtasksSection + // <-- Subtasks are handled above now
 						'\n\n' +
 						// Use nextItem.id
-						`${chalk.cyan('Start working:')} ${chalk.yellow(`task-master set-status --id=${nextItem.id} --status=in-progress`)}\n` +
+						`${chalk.cyan('Начать работу:')} ${chalk.yellow(`task-master set-status --id=${nextItem.id} --status=in-progress`)}\n` +
 						// Use nextItem.id
-						`${chalk.cyan('View details:')} ${chalk.yellow(`task-master show ${nextItem.id}`)}`,
+						`${chalk.cyan('Посмотреть детали:')} ${chalk.yellow(`task-master show ${nextItem.id}`)}`,
 					{
 						padding: { left: 2, right: 2, top: 1, bottom: 1 },
 						borderColor: '#FF8800',
 						borderStyle: 'round',
 						margin: { top: 1, bottom: 1 },
-						title: '⚡ RECOMMENDED NEXT TASK ⚡',
+						title: '⚡ РЕКОМЕНДУЕМАЯ СЛЕДУЮЩАЯ ЗАДАЧА ⚡',
 						titleAlignment: 'center',
 						width: terminalWidth - 4,
 						fullscreen: false
@@ -751,15 +752,15 @@ function listTasks(
 		} else {
 			console.log(
 				boxen(
-					chalk.hex('#FF8800').bold('No eligible next task found') +
+					chalk.hex('#FF8800').bold('Не найдено подходящей следующей задачи') +
 						'\n\n' +
-						'All pending tasks have dependencies that are not yet completed, or all tasks are done.',
+						'Все ожидающие задачи имеют зависимости, которые еще не выполнены, или все задачи выполнены.',
 					{
 						padding: 1,
 						borderColor: '#FF8800',
 						borderStyle: 'round',
 						margin: { top: 1, bottom: 1 },
-						title: '⚡ NEXT TASK ⚡',
+						title: '⚡ СЛЕДУЮЩАЯ ЗАДАЧА ⚡',
 						titleAlignment: 'center',
 						width: terminalWidth - 4 // Use full terminal width minus a small margin
 					}
@@ -770,11 +771,11 @@ function listTasks(
 		// Show next steps
 		console.log(
 			boxen(
-				chalk.white.bold('Suggested Next Steps:') +
+				chalk.white.bold('Предлагаемые следующие шаги:') +
 					'\n\n' +
-					`${chalk.cyan('1.')} Run ${chalk.yellow('task-master next')} to see what to work on next\n` +
-					`${chalk.cyan('2.')} Run ${chalk.yellow('task-master expand --id=<id>')} to break down a task into subtasks\n` +
-					`${chalk.cyan('3.')} Run ${chalk.yellow('task-master set-status --id=<id> --status=done')} to mark a task as complete`,
+					`${chalk.cyan('1.')} Выполните ${chalk.yellow('task-master next')}, чтобы увидеть, над чем работать дальше\n` +
+					`${chalk.cyan('2.')} Выполните ${chalk.yellow('task-master expand --id=<id>')}, чтобы разбить задачу на подзадачи\n` +
+					`${chalk.cyan('3.')} Выполните ${chalk.yellow('task-master set-status --id=<id> --status=done')}, чтобы отметить задачу как выполненную`,
 				{
 					padding: 1,
 					borderColor: 'gray',
@@ -802,18 +803,18 @@ function listTasks(
 
 // *** Helper function to get description for task or subtask ***
 function getWorkItemDescription(item, allTasks) {
-	if (!item) return 'N/A';
+	if (!item) return 'Н/Д';
 	if (item.parentId) {
 		// It's a subtask
 		const parent = allTasks.find((t) => t.id === item.parentId);
 		const subtask = parent?.subtasks?.find(
 			(st) => `${parent.id}.${st.id}` === item.id
 		);
-		return subtask?.description || 'No description available.';
+		return subtask?.description || 'Описание отсутствует.';
 	} else {
 		// It's a top-level task
 		const task = allTasks.find((t) => String(t.id) === String(item.id));
-		return task?.description || 'No description available.';
+		return task?.description || 'Описание отсутствует.';
 	}
 }
 
@@ -900,7 +901,7 @@ function generateMarkdownOutput(data, filteredTasks, stats) {
 	markdown +=
 		'┌───────────┬──────────────────────────────────────┬─────────────────┬──────────────┬───────────────────────┬───────────┐\n';
 	markdown +=
-		'│ ID        │ Title                                │ Status          │ Priority     │ Dependencies          │ Complexi… │\n';
+		'│ ID        │ Заголовок                            │ Статус          │ Приоритет    │ Зависимости           │ Сложност… │\n';
 	markdown +=
 		'├───────────┼──────────────────────────────────────┼─────────────────┼──────────────┼───────────────────────┼───────────┤\n';
 
@@ -909,27 +910,27 @@ function generateMarkdownOutput(data, filteredTasks, stats) {
 		switch (status) {
 			case 'done':
 			case 'completed':
-				return '✓ done';
+				return '✓ выполнено';
 			case 'in-progress':
-				return '► in-progress';
+				return '► в процессе';
 			case 'pending':
-				return '○ pending';
+				return '○ ожидание';
 			case 'blocked':
-				return '⭕ blocked';
+				return '⭕ заблокировано';
 			case 'deferred':
-				return 'x deferred';
+				return 'x отложено';
 			case 'cancelled':
-				return 'x cancelled';
+				return 'x отменено';
 			case 'review':
-				return '? review';
+				return '? на проверке';
 			default:
-				return status || 'pending';
+				return status || 'ожидание';
 		}
 	};
 
 	// Helper function to format dependencies without color codes
 	const formatDependenciesForMarkdown = (deps, allTasks) => {
-		if (!deps || deps.length === 0) return 'None';
+		if (!deps || deps.length === 0) return 'Нет';
 		return deps
 			.map((depId) => {
 				const depTask = allTasks.find((t) => t.id === depId);
@@ -948,8 +949,8 @@ function generateMarkdownOutput(data, filteredTasks, stats) {
 			? `● ${task.complexityScore}`
 			: 'N/A';
 
-		markdown += `│ ${task.id.toString().padEnd(9)} │ ${taskTitle.substring(0, 36).padEnd(36)} │ ${statusSymbol.padEnd(15)} │ ${priority.padEnd(12)} │ ${deps.substring(0, 21).padEnd(21)} │ ${complexity.padEnd(9)} │\n`;
-
+		markdown += `│ ${task.id.toString().padEnd(9)} │ ${taskTitle.substring(0, 36).padEnd(36)} │ ${statusSymbol.padEnd(15)} │ ${priority.padEnd(12)} │ ${deps.substring(0, 21).padEnd(21)} │ ${complexity.padEnd(9)} │
+`;
 		// Add subtasks if requested
 		if (withSubtasks && task.subtasks && task.subtasks.length > 0) {
 			task.subtasks.forEach((subtask) => {
@@ -961,7 +962,7 @@ function generateMarkdownOutput(data, filteredTasks, stats) {
 				);
 				const subtaskComplexity = subtask.complexityScore
 					? subtask.complexityScore.toString()
-					: 'N/A';
+					: 'Н/Д';
 
 				markdown +=
 					'├───────────┼──────────────────────────────────────┼─────────────────┼──────────────┼───────────────────────┼───────────┤\n';
@@ -987,17 +988,17 @@ function generateMarkdownOutput(data, filteredTasks, stats) {
 	// Next task recommendation
 	if (nextItem) {
 		markdown +=
-			'╭────────────────────────────────────────────── ⚡ RECOMMENDED NEXT TASK ⚡ ──────────────────────────────────────────────╮\n';
+			'╭────────────────────────────────────────────── ⚡ РЕКОМЕНДУЕМАЯ СЛЕДУЮЩАЯ ЗАДАЧА ⚡ ──────────────────────────────────────────────╮\n';
 		markdown +=
 			'│                                                                                                                         │\n';
-		markdown += `│  🔥 Next Task to Work On: #${nextItem.id} - ${nextItem.title}                                  │\n`;
+		markdown += `│  🔥 Следующая задача для работы: #${nextItem.id} - ${nextItem.title}                                  │\n`;
 		markdown +=
 			'│                                                                                                                         │\n';
-		markdown += `│  Priority: ${nextItem.priority || 'medium'}   Status: ${getStatusSymbol(nextItem.status)}                                                                                     │\n`;
-		markdown += `│  Dependencies: ${nextItem.dependencies && nextItem.dependencies.length > 0 ? formatDependenciesForMarkdown(nextItem.dependencies, data.tasks) : 'None'}                                                                                                     │\n`;
+		markdown += `│  Приоритет: ${nextItem.priority || 'medium'}   Статус: ${getStatusSymbol(nextItem.status)}                                                                                     │\n`;
+		markdown += `│  Зависимости: ${nextItem.dependencies && nextItem.dependencies.length > 0 ? formatDependenciesForMarkdown(nextItem.dependencies, data.tasks) : 'Нет'}                                                                                                     │\n`;
 		markdown +=
 			'│                                                                                                                         │\n';
-		markdown += `│  Description: ${getWorkItemDescription(nextItem, data.tasks)}     │\n`;
+		markdown += `│  Описание: ${getWorkItemDescription(nextItem, data.tasks)}     │\n`;
 		markdown +=
 			'│                                                                                                                         │\n';
 
@@ -1005,7 +1006,7 @@ function generateMarkdownOutput(data, filteredTasks, stats) {
 		const parentTask = data.tasks.find((t) => t.id === nextItem.id);
 		if (parentTask && parentTask.subtasks && parentTask.subtasks.length > 0) {
 			markdown +=
-				'│  Subtasks:                                                                                              │\n';
+				'│  Подзадачи:                                                                                              │\n';
 			parentTask.subtasks.forEach((subtask) => {
 				markdown += `│  ${nextItem.id}.${subtask.id} [${subtask.status || 'pending'}] ${subtask.title}                                         │\n`;
 			});
@@ -1013,8 +1014,8 @@ function generateMarkdownOutput(data, filteredTasks, stats) {
 				'│                                                                                                                         │\n';
 		}
 
-		markdown += `│  Start working: task-master set-status --id=${nextItem.id} --status=in-progress                                                     │\n`;
-		markdown += `│  View details: task-master show ${nextItem.id}                                                                      │\n`;
+		markdown += `│  Начать работу: task-master set-status --id=${nextItem.id} --status=in-progress                                                     │\n`;
+		markdown += `│  Посмотреть детали: task-master show ${nextItem.id}                                                                      │\n`;
 		markdown +=
 			'│                                                                                                                         │\n';
 		markdown +=
@@ -1028,15 +1029,15 @@ function generateMarkdownOutput(data, filteredTasks, stats) {
 	markdown +=
 		'│                                                                                      │\n';
 	markdown +=
-		'│   Suggested Next Steps:                                                              │\n';
+		'│   Предлагаемые следующие шаги:                                                              │\n';
 	markdown +=
 		'│                                                                                      │\n';
 	markdown +=
-		'│   1. Run task-master next to see what to work on next                                │\n';
+		'│   1. Выполните task-master next, чтобы увидеть, над чем работать дальше                                │\n';
 	markdown +=
-		'│   2. Run task-master expand --id=<id> to break down a task into subtasks             │\n';
+		'│   2. Выполните task-master expand --id=<id>, чтобы разбить задачу на подзадачи             │\n';
 	markdown +=
-		'│   3. Run task-master set-status --id=<id> --status=done to mark a task as complete   │\n';
+		'│   3. Выполните task-master set-status --id=<id> --status=done, чтобы отметить задачу как выполненную   │\n';
 	markdown +=
 		'│                                                                                      │\n';
 	markdown +=

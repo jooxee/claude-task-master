@@ -26,31 +26,31 @@ const subtaskSchema = z
 			.number()
 			.int()
 			.positive()
-			.describe('Sequential subtask ID starting from 1'),
-		title: z.string().min(5).describe('Clear, specific title for the subtask'),
+			.describe('Последовательный ID подзадачи, начиная с 1'),
+		title: z.string().min(5).describe('Четкий, конкретный заголовок для подзадачи'),
 		description: z
 			.string()
 			.min(10)
-			.describe('Detailed description of the subtask'),
+			.describe('Подробное описание подзадачи'),
 		dependencies: z
 			.array(z.number().int())
-			.describe('IDs of prerequisite subtasks within this expansion'),
-		details: z.string().min(20).describe('Implementation details and guidance'),
+			.describe('ID необходимых подзадач в рамках этого расширения'),
+		details: z.string().min(20).describe('Детали реализации и руководство'),
 		status: z
 			.string()
 			.describe(
-				'The current status of the subtask (should be pending initially)'
+				'Текущий статус подзадачи (изначально должен быть pending)'
 			),
 		testStrategy: z
 			.string()
 			.nullable()
-			.describe('Approach for testing this subtask')
+			.describe('Подход к тестированию этой подзадачи')
 			.default('')
 	})
 	.strict();
 const subtaskArraySchema = z.array(subtaskSchema);
 const subtaskWrapperSchema = z.object({
-	subtasks: subtaskArraySchema.describe('The array of generated subtasks.')
+	subtasks: subtaskArraySchema.describe('Массив сгенерированных подзадач.')
 });
 // --- End Zod Schemas ---
 
@@ -60,27 +60,27 @@ const subtaskWrapperSchema = z.object({
  * @returns {string} The system prompt.
  */
 function generateMainSystemPrompt(subtaskCount) {
-	return `You are an AI assistant helping with task breakdown for software development.
-You need to break down a high-level task into ${subtaskCount} specific subtasks that can be implemented one by one.
+	return `Вы — AI-ассистент, помогающий в разбивке задач для разработки программного обеспечения.
+Вам нужно разбить высокоуровневую задачу на ${subtaskCount} конкретных подзадач, которые можно реализовать одну за другой.
 
-Subtasks should:
-1. Be specific and actionable implementation steps
-2. Follow a logical sequence
-3. Each handle a distinct part of the parent task
-4. Include clear guidance on implementation approach
-5. Have appropriate dependency chains between subtasks (using the new sequential IDs)
-6. Collectively cover all aspects of the parent task
+Подзадачи должны:
+1. Быть конкретными и выполнимыми шагами реализации
+2. Следовать логической последовательности
+3. Каждая должна отвечать за отдельную часть родительской задачи
+4. Включать четкое руководство по подходу к реализации
+5. Иметь соответствующие цепочки зависимостей между подзадачами (используя новые последовательные ID)
+6. В совокупности охватывать все аспекты родительской задачи
 
-For each subtask, provide:
-- id: Sequential integer starting from the provided nextSubtaskId
-- title: Clear, specific title
-- description: Detailed description
-- dependencies: Array of prerequisite subtask IDs (use the new sequential IDs)
-- details: Implementation details
-- testStrategy: Optional testing approach
+Для каждой подзадачи предоставьте:
+- id: Последовательное целое число, начиная с предоставленного nextSubtaskId
+- title: Четкий, конкретный заголовок
+- description: Подробное описание
+- dependencies: Массив ID необходимых подзадач (используйте новые последовательные ID)
+- details: Детали реализации
+- testStrategy: Необязательный подход к тестированию
 
 
-Respond ONLY with a valid JSON object containing a single key "subtasks" whose value is an array matching the structure described. Do not include any explanatory text, markdown formatting, or code block markers.`;
+Отвечайте ТОЛЬКО валидным объектом JSON, содержащим один ключ "subtasks", значением которого является массив, соответствующий описанной структуре. Не включайте никакого пояснительного текста, форматирования markdown или маркеров кодовых блоков.`;
 }
 
 /**
@@ -98,32 +98,32 @@ function generateMainUserPrompt(
 	nextSubtaskId
 ) {
 	const contextPrompt = additionalContext
-		? `\n\nAdditional context: ${additionalContext}`
+		? `\n\nДополнительный контекст: ${additionalContext}`
 		: '';
 	const schemaDescription = `
 {
   "subtasks": [
     {
-      "id": ${nextSubtaskId}, // First subtask ID
-      "title": "Specific subtask title",
-      "description": "Detailed description",
-      "dependencies": [], // e.g., [${nextSubtaskId + 1}] if it depends on the next
-      "details": "Implementation guidance",
-      "testStrategy": "Optional testing approach"
+      "id": ${nextSubtaskId}, // ID первой подзадачи
+      "title": "Конкретный заголовок подзадачи",
+      "description": "Подробное описание",
+      "dependencies": [], // например, [${nextSubtaskId + 1}], если она зависит от следующей
+      "details": "Руководство по реализации",
+      "testStrategy": "Необязательный подход к тестированию"
     },
-    // ... (repeat for a total of ${subtaskCount} subtasks with sequential IDs)
+    // ... (повторить для ${subtaskCount} подзадач с последовательными ID)
   ]
 }`;
 
-	return `Break down this task into exactly ${subtaskCount} specific subtasks:
+	return `Разбейте эту задачу на ровно ${subtaskCount} конкретных подзадач:
 
-Task ID: ${task.id}
-Title: ${task.title}
-Description: ${task.description}
-Current details: ${task.details || 'None'}
+ID задачи: ${task.id}
+Заголовок: ${task.title}
+Описание: ${task.description}
+Текущие детали: ${task.details || 'Нет'}
 ${contextPrompt}
 
-Return ONLY the JSON object containing the "subtasks" array, matching this structure:
+Возвращайте ТОЛЬКО объект JSON, содержащий массив "subtasks", соответствующий этой структуре:
 ${schemaDescription}`;
 }
 
@@ -142,38 +142,38 @@ function generateResearchUserPrompt(
 	nextSubtaskId
 ) {
 	const contextPrompt = additionalContext
-		? `\n\nConsider this context: ${additionalContext}`
+		? `\n\nУчтите этот контекст: ${additionalContext}`
 		: '';
 	const schemaDescription = `
 {
   "subtasks": [
     {
-      "id": <number>, // Sequential ID starting from ${nextSubtaskId}
+      "id": <number>, // Последовательный ID, начиная с ${nextSubtaskId}
       "title": "<string>",
       "description": "<string>",
-      "dependencies": [<number>], // e.g., [${nextSubtaskId + 1}]. If no dependencies, use an empty array [].
+      "dependencies": [<number>], // например, [${nextSubtaskId + 1}]. Если зависимостей нет, используйте пустой массив [].
       "details": "<string>",
-      "testStrategy": "<string>" // Optional
+      "testStrategy": "<string>" // Необязательно
     },
-    // ... (repeat for ${subtaskCount} subtasks)
+    // ... (повторить для ${subtaskCount} подзадач)
   ]
 }`;
 
-	return `Analyze the following task and break it down into exactly ${subtaskCount} specific subtasks using your research capabilities. Assign sequential IDs starting from ${nextSubtaskId}.
+	return `Проанализируйте следующую задачу и разбейте ее на ровно ${subtaskCount} конкретных подзадач, используя свои исследовательские возможности. Назначьте последовательные ID, начиная с ${nextSubtaskId}.
 
-Parent Task:
+Родительская задача:
 ID: ${task.id}
-Title: ${task.title}
-Description: ${task.description}
-Current details: ${task.details || 'None'}
+Заголовок: ${task.title}
+Описание: ${task.description}
+Текущие детали: ${task.details || 'Нет'}
 ${contextPrompt}
 
-CRITICAL: Respond ONLY with a valid JSON object containing a single key "subtasks". The value must be an array of the generated subtasks, strictly matching this structure:
+КРИТИЧЕСКИ ВАЖНО: Отвечайте ТОЛЬКО валидным объектом JSON, содержащим один ключ "subtasks". Значение должно быть массивом сгенерированных подзадач, строго соответствующим этой структуре:
 ${schemaDescription}
 
-Important: For the 'dependencies' field, if a subtask has no dependencies, you MUST use an empty array, for example: "dependencies": []. Do not use null or omit the field.
+Важно: для поля 'dependencies', если у подзадачи нет зависимостей, вы ДОЛЖНЫ использовать пустой массив, например: "dependencies": []. Не используйте null и не опускайте поле.
 
-Do not include ANY explanatory text, markdown, or code block markers. Just the JSON object.`;
+Не включайте НИКАКОГО пояснительного текста, markdown или маркеров кодовых блоков. Только объект JSON.`;
 }
 
 /**
@@ -195,20 +195,20 @@ function parseSubtasksFromText(
 ) {
 	if (typeof text !== 'string') {
 		logger.error(
-			`AI response text is not a string. Received type: ${typeof text}, Value: ${text}`
+			`Текст ответа AI не является строкой. Получен тип: ${typeof text}, значение: ${text}`
 		);
-		throw new Error('AI response text is not a string.');
+		throw new Error('Текст ответа AI не является строкой.');
 	}
 
 	if (!text || text.trim() === '') {
-		throw new Error('AI response text is empty after trimming.');
+		throw new Error('Текст ответа AI пуст после обрезки.');
 	}
 
 	const originalTrimmedResponse = text.trim(); // Store the original trimmed response
 	let jsonToParse = originalTrimmedResponse; // Initialize jsonToParse with it
 
 	logger.debug(
-		`Original AI Response for parsing (full length: ${jsonToParse.length}): ${jsonToParse.substring(0, 1000)}...`
+		`Исходный ответ AI для разбора (полная длина: ${jsonToParse.length}): ${jsonToParse.substring(0, 1000)}...`
 	);
 
 	// --- Pre-emptive cleanup for known AI JSON issues ---
@@ -216,13 +216,13 @@ function parseSubtasksFromText(
 	if (jsonToParse.includes('"dependencies":')) {
 		const malformedPattern = /"dependencies":\s*,/g;
 		if (malformedPattern.test(jsonToParse)) {
-			logger.warn('Attempting to fix malformed "dependencies": , issue.');
+			logger.warn('Попытка исправить некорректную проблему "dependencies": ,.');
 			jsonToParse = jsonToParse.replace(
 				malformedPattern,
 				'"dependencies": [],'
 			);
 			logger.debug(
-				`JSON after fixing "dependencies": ${jsonToParse.substring(0, 500)}...`
+				`JSON после исправления "dependencies": ${jsonToParse.substring(0, 500)}...`
 			);
 		}
 	}
@@ -232,22 +232,22 @@ function parseSubtasksFromText(
 	let primaryParseAttemptFailed = false;
 
 	// --- Attempt 1: Simple Parse (with optional Markdown cleanup) ---
-	logger.debug('Attempting simple parse...');
+	logger.debug('Попытка простого разбора...');
 	try {
 		// Check for markdown code block
 		const codeBlockMatch = jsonToParse.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
 		let contentToParseDirectly = jsonToParse;
 		if (codeBlockMatch && codeBlockMatch[1]) {
 			contentToParseDirectly = codeBlockMatch[1].trim();
-			logger.debug('Simple parse: Extracted content from markdown code block.');
+			logger.debug('Простой разбор: извлечено содержимое из блока кода markdown.');
 		} else {
 			logger.debug(
-				'Simple parse: No markdown code block found, using trimmed original.'
+				'Простой разбор: блок кода markdown не найден, используется обрезанный оригинал.'
 			);
 		}
 
 		parsedObject = JSON.parse(contentToParseDirectly);
-		logger.debug('Simple parse successful!');
+		logger.debug('Простой разбор успешен!');
 
 		// Quick check if it looks like our target object
 		if (
@@ -256,7 +256,7 @@ function parseSubtasksFromText(
 			!Array.isArray(parsedObject.subtasks)
 		) {
 			logger.warn(
-				'Simple parse succeeded, but result is not the expected {"subtasks": []} structure. Will proceed to advanced extraction.'
+				'Простой разбор успешен, но результат не является ожидаемой структурой {"subtasks": []}. Переход к расширенному извлечению.'
 			);
 			primaryParseAttemptFailed = true;
 			parsedObject = null; // Reset parsedObject so we enter the advanced logic
@@ -264,7 +264,7 @@ function parseSubtasksFromText(
 		// If it IS the correct structure, we'll skip advanced extraction.
 	} catch (e) {
 		logger.warn(
-			`Simple parse failed: ${e.message}. Proceeding to advanced extraction logic.`
+			`Простой разбор не удался: ${e.message}. Переход к логике расширенного извлечения.`
 		);
 		primaryParseAttemptFailed = true;
 		// jsonToParse is already originalTrimmedResponse if simple parse failed before modifying it for markdown
@@ -273,7 +273,7 @@ function parseSubtasksFromText(
 	// --- Attempt 2: Advanced Extraction (if simple parse failed or produced wrong structure) ---
 	if (primaryParseAttemptFailed || !parsedObject) {
 		// Ensure we try advanced if simple parse gave wrong structure
-		logger.debug('Attempting advanced extraction logic...');
+		logger.debug('Попытка применить логику расширенного извлечения...');
 		// Reset jsonToParse to the original full trimmed response for advanced logic
 		jsonToParse = originalTrimmedResponse;
 
@@ -301,21 +301,21 @@ function parseSubtasksFromText(
 		// End of advanced logic excerpt
 
 		logger.debug(
-			`Advanced extraction: JSON string that will be parsed: ${jsonToParse.substring(0, 500)}...`
+			`Расширенное извлечение: строка JSON, которая будет разобрана: ${jsonToParse.substring(0, 500)}...`
 		);
 		try {
 			parsedObject = JSON.parse(jsonToParse);
-			logger.debug('Advanced extraction parse successful!');
+			logger.debug('Разбор с расширенным извлечением успешен!');
 		} catch (parseError) {
 			logger.error(
-				`Advanced extraction: Failed to parse JSON object: ${parseError.message}`
+				`Расширенное извлечение: не удалось разобрать объект JSON: ${parseError.message}`
 			);
 			logger.error(
-				`Advanced extraction: Problematic JSON string for parse (first 500 chars): ${jsonToParse.substring(0, 500)}`
+				`Расширенное извлечение: проблемная строка JSON для разбора (первые 500 символов): ${jsonToParse.substring(0, 500)}`
 			);
 			throw new Error(
 				// Re-throw a more specific error if advanced also fails
-				`Failed to parse JSON response object after both simple and advanced attempts: ${parseError.message}`
+				`Не удалось разобрать объект ответа JSON после простой и расширенной попыток: ${parseError.message}`
 			);
 		}
 	}
@@ -327,17 +327,17 @@ function parseSubtasksFromText(
 		!Array.isArray(parsedObject.subtasks)
 	) {
 		logger.error(
-			`Final parsed content is not an object or missing 'subtasks' array. Content: ${JSON.stringify(parsedObject).substring(0, 200)}`
+			`Окончательное разобранное содержимое не является объектом или отсутствует массив 'subtasks'. Содержимое: ${JSON.stringify(parsedObject).substring(0, 200)}`
 		);
 		throw new Error(
-			'Parsed AI response is not a valid object containing a "subtasks" array after all attempts.'
+			'Разобранный ответ AI не является допустимым объектом, содержащим массив "subtasks" после всех попыток.'
 		);
 	}
 	const parsedSubtasks = parsedObject.subtasks;
 
 	if (expectedCount && parsedSubtasks.length !== expectedCount) {
 		logger.warn(
-			`Expected ${expectedCount} subtasks, but parsed ${parsedSubtasks.length}.`
+			`Ожидалось ${expectedCount} подзадач, но разобрано ${parsedSubtasks.length}.`
 		);
 	}
 
@@ -366,12 +366,12 @@ function parseSubtasksFromText(
 			validatedSubtasks.push(result.data);
 		} else {
 			logger.warn(
-				`Subtask validation failed for raw data: ${JSON.stringify(rawSubtask).substring(0, 100)}...`
+				`Проверка подзадачи не удалась для необработанных данных: ${JSON.stringify(rawSubtask).substring(0, 100)}...`
 			);
 			result.error.errors.forEach((err) => {
-				const errorMessage = `  - Field '${err.path.join('.')}': ${err.message}`;
+				const errorMessage = `  - Поле '${err.path.join('.')}': ${err.message}`;
 				logger.warn(errorMessage);
-				validationErrors.push(`Subtask ${currentId}: ${errorMessage}`);
+				validationErrors.push(`Подзадача ${currentId}: ${errorMessage}`);
 			});
 		}
 		currentId++;
@@ -379,14 +379,14 @@ function parseSubtasksFromText(
 
 	if (validationErrors.length > 0) {
 		logger.error(
-			`Found ${validationErrors.length} validation errors in the generated subtasks.`
+			`Найдено ${validationErrors.length} ошибок валидации в сгенерированных подзадачах.`
 		);
-		logger.warn('Proceeding with only the successfully validated subtasks.');
+		logger.warn('Продолжение работы только с успешно проверенными подзадачами.');
 	}
 
 	if (validatedSubtasks.length === 0 && parsedSubtasks.length > 0) {
 		throw new Error(
-			'AI response contained potential subtasks, but none passed validation.'
+			'Ответ AI содержал потенциальные подзадачи, но ни одна не прошла проверку.'
 		);
 	}
 	return validatedSubtasks.slice(0, expectedCount || validatedSubtasks.length);
@@ -434,29 +434,29 @@ async function expandTask(
 	};
 
 	if (mcpLog) {
-		logger.info(`expandTask called with context: session=${!!session}`);
+		logger.info(`expandTask вызван с контекстом: session=${!!session}`);
 	}
 
 	try {
 		// --- Task Loading/Filtering (Unchanged) ---
-		logger.info(`Reading tasks from ${tasksPath}`);
+		logger.info(`Чтение задач из ${tasksPath}`);
 		const data = readJSON(tasksPath, projectRoot, tag);
 		if (!data || !data.tasks)
-			throw new Error(`Invalid tasks data in ${tasksPath}`);
+			throw new Error(`Неверные данные задач в ${tasksPath}`);
 		const taskIndex = data.tasks.findIndex(
 			(t) => t.id === parseInt(taskId, 10)
 		);
-		if (taskIndex === -1) throw new Error(`Task ${taskId} not found`);
+		if (taskIndex === -1) throw new Error(`Задача ${taskId} не найдена`);
 		const task = data.tasks[taskIndex];
 		logger.info(
-			`Expanding task ${taskId}: ${task.title}${useResearch ? ' with research' : ''}`
+			`Расширение задачи ${taskId}: ${task.title}${useResearch ? ' с исследованием' : ''}`
 		);
 		// --- End Task Loading/Filtering ---
 
 		// --- Handle Force Flag: Clear existing subtasks if force=true ---
 		if (force && Array.isArray(task.subtasks) && task.subtasks.length > 0) {
 			logger.info(
-				`Force flag set. Clearing existing ${task.subtasks.length} subtasks for task ${taskId}.`
+				`Установлен флаг force. Очистка существующих ${task.subtasks.length} подзадач для задачи ${taskId}.`
 			);
 			task.subtasks = []; // Clear existing subtasks
 		}
@@ -487,7 +487,7 @@ async function expandTask(
 				gatheredContext = contextResult;
 			}
 		} catch (contextError) {
-			logger.warn(`Could not gather context: ${contextError.message}`);
+			logger.warn(`Не удалось собрать контекст: ${contextError.message}`);
 		}
 		// --- End Context Gathering ---
 
@@ -508,193 +508,193 @@ async function expandTask(
 				);
 				if (taskAnalysis) {
 					logger.info(
-						`Found complexity analysis for task ${task.id}: Score ${taskAnalysis.complexityScore}`
+						`Найден анализ сложности для задачи ${task.id}: Оценка ${taskAnalysis.complexityScore}`
 					);
 					if (taskAnalysis.reasoning) {
-						complexityReasoningContext = `\nComplexity Analysis Reasoning: ${taskAnalysis.reasoning}`;
+						complexityReasoningContext = `\nОбоснование анализа сложности: ${taskAnalysis.reasoning}`;
 					}
 				} else {
 					logger.info(
-						`No complexity analysis found for task ${task.id} in report.`
+						`Анализ сложности для задачи ${task.id} в отчете не найден.`
 					);
 				}
 			} else {
 				logger.info(
-					`Complexity report not found at ${complexityReportPath}. Skipping complexity check.`
+					`Отчет о сложности не найден по адресу ${complexityReportPath}. Пропуск проверки сложности.`
 				);
 			}
 		} catch (reportError) {
 			logger.warn(
-				`Could not read or parse complexity report: ${reportError.message}. Proceeding without it.`
+				`Не удалось прочитать или разобрать отчет о сложности: ${reportError.message}. Продолжение без него.`
 			);
 		}
 
 		// Determine final subtask count
-		const explicitNumSubtasks = parseInt(numSubtasks, 10);
-		if (!Number.isNaN(explicitNumSubtasks) && explicitNumSubtasks > 0) {
-			finalSubtaskCount = explicitNumSubtasks;
-			logger.info(
-				`Using explicitly provided subtask count: ${finalSubtaskCount}`
-			);
-		} else if (taskAnalysis?.recommendedSubtasks) {
-			finalSubtaskCount = parseInt(taskAnalysis.recommendedSubtasks, 10);
-			logger.info(
-				`Using subtask count from complexity report: ${finalSubtaskCount}`
-			);
-		} else {
-			finalSubtaskCount = getDefaultSubtasks(session);
-			logger.info(`Using default number of subtasks: ${finalSubtaskCount}`);
-		}
-		if (Number.isNaN(finalSubtaskCount) || finalSubtaskCount <= 0) {
-			logger.warn(
-				`Invalid subtask count determined (${finalSubtaskCount}), defaulting to 3.`
-			);
-			finalSubtaskCount = 3;
-		}
+        const explicitNumSubtasks = parseInt(numSubtasks, 10);
+        if (!Number.isNaN(explicitNumSubtasks) && explicitNumSubtasks > 0) {
+            finalSubtaskCount = explicitNumSubtasks;
+            logger.info(
+                `Использование явно указанного количества подзадач: ${finalSubtaskCount}`
+            );
+        } else if (taskAnalysis?.recommendedSubtasks) {
+            finalSubtaskCount = parseInt(taskAnalysis.recommendedSubtasks, 10);
+            logger.info(
+                `Использование количества подзадач из отчета о сложности: ${finalSubtaskCount}`
+            );
+        } else {
+            finalSubtaskCount = getDefaultSubtasks(session);
+            logger.info(`Использование количества подзадач по умолчанию: ${finalSubtaskCount}`);
+        }
+        if (Number.isNaN(finalSubtaskCount) || finalSubtaskCount <= 0) {
+            logger.warn(
+                `Определено неверное количество подзадач (${finalSubtaskCount}), по умолчанию используется 3.`
+            );
+            finalSubtaskCount = 3;
+        }
 
-		// Determine prompt content AND system prompt
-		const nextSubtaskId = (task.subtasks?.length || 0) + 1;
+        // Determine prompt content AND system prompt
+        const nextSubtaskId = (task.subtasks?.length || 0) + 1;
 
-		if (taskAnalysis?.expansionPrompt) {
-			// Use prompt from complexity report
-			promptContent = taskAnalysis.expansionPrompt;
-			// Append additional context and reasoning
-			promptContent += `\n\n${additionalContext}`.trim();
-			promptContent += `${complexityReasoningContext}`.trim();
-			if (gatheredContext) {
-				promptContent += `\n\n# Project Context\n\n${gatheredContext}`;
-			}
+        if (taskAnalysis?.expansionPrompt) {
+            // Use prompt from complexity report
+            promptContent = taskAnalysis.expansionPrompt;
+            // Append additional context and reasoning
+            promptContent += `\n\n${additionalContext}`.trim();
+            promptContent += `${complexityReasoningContext}`.trim();
+            if (gatheredContext) {
+                promptContent += `\n\n# Контекст проекта\n\n${gatheredContext}`;
+            }
 
-			// --- Use Simplified System Prompt for Report Prompts ---
-			systemPrompt = `You are an AI assistant helping with task breakdown. Generate exactly ${finalSubtaskCount} subtasks based on the provided prompt and context. Respond ONLY with a valid JSON object containing a single key "subtasks" whose value is an array of the generated subtask objects. Each subtask object in the array must have keys: "id", "title", "description", "dependencies", "details", "status". Ensure the 'id' starts from ${nextSubtaskId} and is sequential. Ensure 'dependencies' only reference valid prior subtask IDs generated in this response (starting from ${nextSubtaskId}). Ensure 'status' is 'pending'. Do not include any other text or explanation.`;
-			logger.info(
-				`Using expansion prompt from complexity report and simplified system prompt for task ${task.id}.`
-			);
-			// --- End Simplified System Prompt ---
-		} else {
-			// Use standard prompt generation
-			let combinedAdditionalContext =
-				`${additionalContext}${complexityReasoningContext}`.trim();
-			if (gatheredContext) {
-				combinedAdditionalContext =
-					`${combinedAdditionalContext}\n\n# Project Context\n\n${gatheredContext}`.trim();
-			}
+            // --- Use Simplified System Prompt for Report Prompts ---
+            systemPrompt = `Вы — AI-ассистент, помогающий в разбивке задач. Сгенерируйте ровно ${finalSubtaskCount} подзадач на основе предоставленного промпта и контекста. Отвечайте ТОЛЬКО валидным объектом JSON, содержащим один ключ "subtasks", значением которого является массив сгенерированных объектов подзадач. Каждый объект подзадачи в массиве должен иметь ключи: "id", "title", "description", "dependencies", "details", "status". Убедитесь, что 'id' начинается с ${nextSubtaskId} и является последовательным. Убедитесь, что 'dependencies' ссылаются только на действительные предыдущие ID подзадач, сгенерированные в этом ответе (начиная с ${nextSubtaskId}). Убедитесь, что 'status' — 'pending'. Не включайте никакого другого текста или объяснений.`;
+            logger.info(
+                `Использование промпта для расширения из отчета о сложности и упрощенного системного промпта для задачи ${task.id}.`
+            );
+            // --- End Simplified System Prompt ---
+        } else {
+            // Use standard prompt generation
+            let combinedAdditionalContext =
+                `${additionalContext}${complexityReasoningContext}`.trim();
+            if (gatheredContext) {
+                combinedAdditionalContext =
+                    `${combinedAdditionalContext}\n\n# Контекст проекта\n\n${gatheredContext}`.trim();
+            }
 
-			if (useResearch) {
-				promptContent = generateResearchUserPrompt(
-					task,
-					finalSubtaskCount,
-					combinedAdditionalContext,
-					nextSubtaskId
-				);
-				// Use the specific research system prompt if needed, or a standard one
-				systemPrompt = `You are an AI assistant that responds ONLY with valid JSON objects as requested. The object should contain a 'subtasks' array.`; // Or keep generateResearchSystemPrompt if it exists
-			} else {
-				promptContent = generateMainUserPrompt(
-					task,
-					finalSubtaskCount,
-					combinedAdditionalContext,
-					nextSubtaskId
-				);
-				// Use the original detailed system prompt for standard generation
-				systemPrompt = generateMainSystemPrompt(finalSubtaskCount);
-			}
-			logger.info(`Using standard prompt generation for task ${task.id}.`);
-		}
+            if (useResearch) {
+                promptContent = generateResearchUserPrompt(
+                    task,
+                    finalSubtaskCount,
+                    combinedAdditionalContext,
+                    nextSubtaskId
+                );
+                // Use the specific research system prompt if needed, or a standard one
+                systemPrompt = `Вы — AI-ассистент, который отвечает ТОЛЬКО валидными объектами JSON по запросу. Объект должен содержать массив 'subtasks'.`; // Or keep generateResearchSystemPrompt if it exists
+            } else {
+                promptContent = generateMainUserPrompt(
+                    task,
+                    finalSubtaskCount,
+                    combinedAdditionalContext,
+                    nextSubtaskId
+                );
+                // Use the original detailed system prompt for standard generation
+                systemPrompt = generateMainSystemPrompt(finalSubtaskCount);
+            }
+            logger.info(`Использование стандартной генерации промпта для задачи ${task.id}.`);
+        }
 		// --- End Complexity Report / Prompt Logic ---
 
 		// --- AI Subtask Generation using generateTextService ---
-		let generatedSubtasks = [];
-		let loadingIndicator = null;
-		if (outputFormat === 'text') {
-			loadingIndicator = startLoadingIndicator(
-				`Generating ${finalSubtaskCount} subtasks...\n`
-			);
-		}
+        let generatedSubtasks = [];
+        let loadingIndicator = null;
+        if (outputFormat === 'text') {
+            loadingIndicator = startLoadingIndicator(
+                `Генерация ${finalSubtaskCount} подзадач...\n`
+            );
+        }
 
-		let responseText = '';
-		let aiServiceResponse = null;
+        let responseText = '';
+        let aiServiceResponse = null;
 
-		try {
-			const role = useResearch ? 'research' : 'main';
+        try {
+            const role = useResearch ? 'research' : 'main';
 
-			// Call generateTextService with the determined prompts and telemetry params
-			aiServiceResponse = await generateTextService({
-				prompt: promptContent,
-				systemPrompt: systemPrompt,
-				role,
-				session,
-				projectRoot,
-				commandName: 'expand-task',
-				outputType: outputFormat
-			});
-			responseText = aiServiceResponse.mainResult;
+            // Call generateTextService with the determined prompts and telemetry params
+            aiServiceResponse = await generateTextService({
+                prompt: promptContent,
+                systemPrompt: systemPrompt,
+                role,
+                session,
+                projectRoot,
+                commandName: 'expand-task',
+                outputType: outputFormat
+            });
+            responseText = aiServiceResponse.mainResult;
 
-			// Parse Subtasks
-			generatedSubtasks = parseSubtasksFromText(
-				responseText,
-				nextSubtaskId,
-				finalSubtaskCount,
-				task.id,
-				logger
-			);
-			logger.info(
-				`Successfully parsed ${generatedSubtasks.length} subtasks from AI response.`
-			);
-		} catch (error) {
-			if (loadingIndicator) stopLoadingIndicator(loadingIndicator);
-			logger.error(
-				`Error during AI call or parsing for task ${taskId}: ${error.message}`, // Added task ID context
-				'error'
-			);
-			// Log raw response in debug mode if parsing failed
-			if (
-				error.message.includes('Failed to parse valid subtasks') &&
-				getDebugFlag(session)
-			) {
-				logger.error(`Raw AI Response that failed parsing:\n${responseText}`);
-			}
-			throw error;
-		} finally {
-			if (loadingIndicator) stopLoadingIndicator(loadingIndicator);
-		}
+            // Parse Subtasks
+            generatedSubtasks = parseSubtasksFromText(
+                responseText,
+                nextSubtaskId,
+                finalSubtaskCount,
+                task.id,
+                logger
+            );
+            logger.info(
+                `Успешно разобрано ${generatedSubtasks.length} подзадач из ответа AI.`
+            );
+        } catch (error) {
+            if (loadingIndicator) stopLoadingIndicator(loadingIndicator);
+            logger.error(
+                `Ошибка во время вызова AI или разбора для задачи ${taskId}: ${error.message}`,
+                'error'
+            );
+            // Log raw response in debug mode if parsing failed
+            if (
+                error.message.includes('Не удалось разобрать действительные подзадачи') &&
+                getDebugFlag(session)
+            ) {
+                logger.error(`Необработанный ответ AI, который не удалось разобрать:\n${responseText}`);
+            }
+            throw error;
+        } finally {
+            if (loadingIndicator) stopLoadingIndicator(loadingIndicator);
+        }
 
-		// --- Task Update & File Writing ---
-		// Ensure task.subtasks is an array before appending
-		if (!Array.isArray(task.subtasks)) {
-			task.subtasks = [];
-		}
-		// Append the newly generated and validated subtasks
-		task.subtasks.push(...generatedSubtasks);
-		// --- End Change: Append instead of replace ---
+        // --- Task Update & File Writing ---
+        // Ensure task.subtasks is an array before appending
+            if (!Array.isArray(task.subtasks)) {
+                task.subtasks = [];
+            }
+        // Append the newly generated and validated subtasks
+        task.subtasks.push(...generatedSubtasks);
+        // --- End Change: Append instead of replace ---
 
-		data.tasks[taskIndex] = task; // Assign the modified task back
-		writeJSON(tasksPath, data, projectRoot, tag);
-		// await generateTaskFiles(tasksPath, path.dirname(tasksPath));
+        data.tasks[taskIndex] = task; // Assign the modified task back
+        writeJSON(tasksPath, data, projectRoot, tag);
+        // await generateTaskFiles(tasksPath, path.dirname(tasksPath));
 
-		// Display AI Usage Summary for CLI
-		if (
-			outputFormat === 'text' &&
-			aiServiceResponse &&
-			aiServiceResponse.telemetryData
-		) {
-			displayAiUsageSummary(aiServiceResponse.telemetryData, 'cli');
-		}
+        // Display AI Usage Summary for CLI
+        if (
+            outputFormat === 'text' &&
+            aiServiceResponse &&
+            aiServiceResponse.telemetryData
+        ) {
+            displayAiUsageSummary(aiServiceResponse.telemetryData, 'cli');
+        }
 
-		// Return the updated task object AND telemetry data
-		return {
-			task,
-			telemetryData: aiServiceResponse?.telemetryData,
-			tagInfo: aiServiceResponse?.tagInfo
-		};
-	} catch (error) {
-		// Catches errors from file reading, parsing, AI call etc.
-		logger.error(`Error expanding task ${taskId}: ${error.message}`, 'error');
-		if (outputFormat === 'text' && getDebugFlag(session)) {
-			console.error(error); // Log full stack in debug CLI mode
-		}
-		throw error; // Re-throw for the caller
-	}
+        // Return the updated task object AND telemetry data
+        return {
+            task,
+            telemetryData: aiServiceResponse?.telemetryData,
+            tagInfo: aiServiceResponse?.tagInfo
+        };
+    } catch (error) {
+        // Catches errors from file reading, parsing, AI call etc.
+        logger.error(`Ошибка при расширении задачи ${taskId}: ${error.message}`, 'error');
+        if (outputFormat === 'text' && getDebugFlag(session)) {
+            console.error(error); // Log full stack in debug CLI mode
+        }
+        throw error; // Re-throw for the caller
+    }
 }
 
 export default expandTask;

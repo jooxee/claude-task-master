@@ -27,13 +27,13 @@ const log = createLogWrapper({
 export async function migrateProject(options = {}) {
 	const projectRoot = findProjectRoot() || process.cwd();
 
-	log.info(`Starting migration in: ${projectRoot}`);
+	log.info(`Начало миграции в: ${projectRoot}`);
 
 	// Check if .taskmaster directory already exists
 	const taskmasterDir = path.join(projectRoot, '.taskmaster');
 	if (fs.existsSync(taskmasterDir) && !options.force) {
 		log.warn(
-			'.taskmaster directory already exists. Use --force to overwrite or skip migration.'
+			'.taskmaster каталог уже существует. Используйте --force для перезаписи или пропуска миграции.'
 		);
 		return;
 	}
@@ -43,21 +43,21 @@ export async function migrateProject(options = {}) {
 
 	if (migrationPlan.length === 0) {
 		log.info(
-			'No files to migrate. Project may already be using the new structure.'
+			'Нет файлов для миграции. Проект, возможно, уже использует новую структуру.'
 		);
 		return;
 	}
 
 	// Show migration plan
-	log.info('Migration plan:');
+	log.info('План миграции:');
 	for (const item of migrationPlan) {
-		const action = options.dryRun ? 'Would move' : 'Will move';
+		const action = options.dryRun ? 'Будет перемещено' : 'Будет перемещено';
 		log.info(`  ${action}: ${item.from} → ${item.to}`);
 	}
 
 	if (options.dryRun) {
 		log.info(
-			'Dry run complete. Use --dry-run=false to perform actual migration.'
+			'Сухой запуск завершен. Используйте --dry-run=false для выполнения фактической миграции.'
 		);
 		return;
 	}
@@ -71,12 +71,12 @@ export async function migrateProject(options = {}) {
 		});
 
 		const answer = await new Promise((resolve) => {
-			rl.question('Proceed with migration? (y/N): ', resolve);
+			rl.question('Продолжить миграцию? (y/N): ', resolve);
 		});
 		rl.close();
 
 		if (answer.toLowerCase() !== 'y' && answer.toLowerCase() !== 'yes') {
-			log.info('Migration cancelled.');
+			log.info('Миграция отменена.');
 			return;
 		}
 	}
@@ -84,15 +84,15 @@ export async function migrateProject(options = {}) {
 	// Perform migration
 	try {
 		await performMigration(projectRoot, migrationPlan, options);
-		log.success('Migration completed successfully!');
-		log.info('You can now use the new .taskmaster directory structure.');
+		log.success('Миграция успешно завершена!');
+		log.info('Теперь вы можете использовать новую структуру каталогов .taskmaster.');
 		if (!options.cleanup) {
 			log.info(
-				'Old files were preserved. Use --cleanup to remove them after verification.'
+				'Старые файлы были сохранены. Используйте --cleanup для их удаления после проверки.'
 			);
 		}
 	} catch (error) {
-		log.error(`Migration failed: ${error.message}`);
+		log.error(`Миграция не удалась: ${error.message}`);
 		throw error;
 	}
 }
@@ -154,7 +154,7 @@ function analyzeMigrationNeeds(projectRoot) {
 				} else {
 					// Other files stay in scripts or get skipped - don't force everything into templates
 					log.warn(
-						`Skipping migration of '${file}' - uncertain categorization. You may need to move this manually.`
+						`Пропуск миграции '${file}' - неопределенная категоризация. Возможно, вам придется переместить этот файл вручную.`
 					);
 					continue;
 				}
@@ -206,14 +206,14 @@ async function performMigration(projectRoot, migrationPlan, options) {
 		const fullDirPath = path.join(projectRoot, dir);
 		if (!fs.existsSync(fullDirPath)) {
 			fs.mkdirSync(fullDirPath, { recursive: true });
-			log.info(`Created directory: ${dir}`);
+			log.info(`Создан каталог: ${dir}`);
 		}
 	}
 
 	// Create backup if requested
 	if (options.backup) {
 		const backupDir = path.join(projectRoot, '.taskmaster-migration-backup');
-		log.info(`Creating backup in: ${backupDir}`);
+		log.info(`Создание резервной копии в: ${backupDir}`);
 		if (fs.existsSync(backupDir)) {
 			fs.rmSync(backupDir, { recursive: true, force: true });
 		}
@@ -226,7 +226,7 @@ async function performMigration(projectRoot, migrationPlan, options) {
 		const toPath = path.join(projectRoot, item.to);
 
 		if (!fs.existsSync(fromPath)) {
-			log.warn(`Source file not found: ${item.from}`);
+			log.warn(`Исходный файл не найден: ${item.from}`);
 			continue;
 		}
 
@@ -252,7 +252,7 @@ async function performMigration(projectRoot, migrationPlan, options) {
 
 		// Copy file
 		fs.copyFileSync(fromPath, toPath);
-		log.info(`Migrated: ${item.from} → ${item.to}`);
+		log.info(`Мигрировано: ${item.from} → ${item.to}`);
 
 		// Remove original if cleanup is requested
 		if (options.cleanup) {
@@ -270,7 +270,7 @@ async function performMigration(projectRoot, migrationPlan, options) {
 					const files = fs.readdirSync(dirPath);
 					if (files.length === 0) {
 						fs.rmdirSync(dirPath);
-						log.info(`Removed empty directory: ${dir}`);
+						log.info(`Удален пустой каталог: ${dir}`);
 					}
 				} catch (error) {
 					// Directory not empty or other error, skip

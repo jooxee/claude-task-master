@@ -31,21 +31,21 @@ import ContextGatherer from '../utils/contextGatherer.js';
 
 // Define Zod schema for the expected AI output object
 const AiTaskDataSchema = z.object({
-	title: z.string().describe('Clear, concise title for the task'),
+	title: z.string().describe('Четкий, краткий заголовок для задачи'),
 	description: z
 		.string()
-		.describe('A one or two sentence description of the task'),
+		.describe('Описание задачи в одном или двух предложениях'),
 	details: z
 		.string()
-		.describe('In-depth implementation details, considerations, and guidance'),
+		.describe('Подробные детали реализации, соображения и руководство'),
 	testStrategy: z
 		.string()
-		.describe('Detailed approach for verifying task completion'),
+		.describe('Подробный подход для проверки выполнения задачи'),
 	dependencies: z
 		.array(z.number())
 		.nullable()
 		.describe(
-			'Array of task IDs that this task depends on (must be completed before this task can start)'
+			'Массив идентификаторов задач, от которых зависит эта задача (должны быть выполнены до начала этой задачи)'
 		)
 });
 
@@ -117,10 +117,10 @@ async function addTask(
 	const effectivePriority = priority || getDefaultPriority(projectRoot);
 
 	logFn.info(
-		`Adding new task with prompt: "${prompt}", Priority: ${effectivePriority}, Dependencies: ${dependencies.join(', ') || 'None'}, Research: ${useResearch}, ProjectRoot: ${projectRoot}`
+		`Добавление новой задачи с промптом: "${prompt}", Приоритет: ${effectivePriority}, Зависимости: ${dependencies.join(', ') || 'Нет'}, Исследование: ${useResearch}, ProjectRoot: ${projectRoot}`
 	);
 	if (tag) {
-		logFn.info(`Using tag context: ${tag}`);
+		logFn.info(`Использование контекста тега: ${tag}`);
 	}
 
 	let loadingIndicator = null;
@@ -209,7 +209,7 @@ async function addTask(
 		// If file doesn't exist or is invalid, create a new structure in memory
 		if (!rawData) {
 			report(
-				'tasks.json not found or invalid. Initializing new structure.',
+				'Файл tasks.json не найден или недействителен. Инициализация новой структуры.',
 				'info'
 			);
 			rawData = {
@@ -217,7 +217,7 @@ async function addTask(
 					tasks: [],
 					metadata: {
 						created: new Date().toISOString(),
-						description: 'Default tasks context'
+						description: 'Контекст задач по умолчанию'
 					}
 				}
 			};
@@ -226,7 +226,7 @@ async function addTask(
 
 		// Handle legacy format migration using utilities
 		if (rawData && Array.isArray(rawData.tasks) && !rawData._rawTaggedData) {
-			report('Legacy format detected. Migrating to tagged format...', 'info');
+			report('Обнаружен устаревший формат. Выполняется миграция в формат с тегами...', 'info');
 
 			// This is legacy format - migrate it to tagged format
 			rawData = {
@@ -235,13 +235,13 @@ async function addTask(
 					metadata: rawData.metadata || {
 						created: new Date().toISOString(),
 						updated: new Date().toISOString(),
-						description: 'Tasks for master context'
+						description: 'Задачи для основного контекста'
 					}
 				}
 			};
 			// Ensure proper metadata using utility
 			ensureTagMetadata(rawData.master, {
-				description: 'Tasks for master context'
+				description: 'Задачи для основного контекста'
 			});
 			// Do not write the file here; it will be written later with the new task.
 
@@ -249,7 +249,7 @@ async function addTask(
 			performCompleteTagMigration(tasksPath);
 			markMigrationForNotice(tasksPath);
 
-			report('Successfully migrated to tagged format.', 'success');
+			report('Успешно перенесено в формат с тегами.', 'success');
 		}
 
 		// Use the provided tag, or the current active tag, or default to 'master'
@@ -259,10 +259,10 @@ async function addTask(
 		// Ensure the target tag exists
 		if (!rawData[targetTag]) {
 			report(
-				`Tag "${targetTag}" does not exist. Please create it first using the 'add-tag' command.`,
+				`Тег "${targetTag}" не существует. Пожалуйста, сначала создайте его с помощью команды 'add-tag'.`,
 				'error'
 			);
-			throw new Error(`Tag "${targetTag}" not found.`);
+			throw new Error(`Тег "${targetTag}" не найден.`);
 		}
 
 		// Ensure the target tag has a tasks array and metadata object
@@ -291,7 +291,7 @@ async function addTask(
 		// Only show UI box for CLI mode
 		if (outputFormat === 'text') {
 			console.log(
-				boxen(chalk.white.bold(`Creating New Task #${newTaskId}`), {
+				boxen(chalk.white.bold(`Создание новой задачи #${newTaskId}`), {
 					padding: 1,
 					borderColor: 'blue',
 					borderStyle: 'round',
@@ -309,10 +309,10 @@ async function addTask(
 
 		if (invalidDeps.length > 0) {
 			report(
-				`The following dependencies do not exist or are invalid: ${invalidDeps.join(', ')}`,
+				`Следующие зависимости не существуют или недействительны: ${invalidDeps.join(', ')}`,
 				'warn'
 			);
-			report('Removing invalid dependencies...', 'info');
+			report('Удаление недействительных зависимостей...', 'info');
 			dependencies = dependencies.filter(
 				(depId) => !invalidDeps.includes(depId)
 			);
@@ -342,9 +342,9 @@ async function addTask(
 
 		// Check if manual task data is provided
 		if (manualTaskData) {
-			report('Using manually provided task data', 'info');
+			report('Использование предоставленных вручную данных задачи', 'info');
 			taskData = manualTaskData;
-			report('DEBUG: Taking MANUAL task data path.', 'debug');
+			report('DEBUG: Выбран путь с РУЧНЫМИ данными задачи.', 'debug');
 
 			// Basic validation for manual data
 			if (
@@ -354,13 +354,13 @@ async function addTask(
 				typeof taskData.description !== 'string'
 			) {
 				throw new Error(
-					'Manual task data must include at least a title and description.'
+					'Данные задачи, введенные вручную, должны содержать как минимум заголовок и описание.'
 				);
 			}
 		} else {
-			report('DEBUG: Taking AI task generation path.', 'debug');
+			report('DEBUG: Выбран путь генерации задачи с помощью AI.', 'debug');
 			// --- Refactored AI Interaction ---
-			report(`Generating task data with AI with prompt:\n${prompt}`, 'info');
+			report(`Генерация данных задачи с помощью AI с промптом:\n${prompt}`, 'info');
 
 			// --- Use the new ContextGatherer ---
 			const contextGatherer = new ContextGatherer(projectRoot);
@@ -380,62 +380,62 @@ async function addTask(
 
 			// System Prompt - Enhanced for dependency awareness
 			const systemPrompt =
-				"You are a helpful assistant that creates well-structured tasks for a software development project. Generate a single new task based on the user's description, adhering strictly to the provided JSON schema. Pay special attention to dependencies between tasks, ensuring the new task correctly references any tasks it depends on.\n\n" +
-				'When determining dependencies for a new task, follow these principles:\n' +
-				'1. Select dependencies based on logical requirements - what must be completed before this task can begin.\n' +
-				'2. Prioritize task dependencies that are semantically related to the functionality being built.\n' +
-				'3. Consider both direct dependencies (immediately prerequisite) and indirect dependencies.\n' +
-				'4. Avoid adding unnecessary dependencies - only include tasks that are genuinely prerequisite.\n' +
-				'5. Consider the current status of tasks - prefer completed tasks as dependencies when possible.\n' +
-				"6. Pay special attention to foundation tasks (1-5) but don't automatically include them without reason.\n" +
-				'7. Recent tasks (higher ID numbers) may be more relevant for newer functionality.\n\n' +
-				'The dependencies array should contain task IDs (numbers) of prerequisite tasks.\n';
+				"Вы — полезный ассистент, который создает хорошо структурированные задачи для проекта по разработке программного обеспечения. Создайте одну новую задачу на основе описания пользователя, строго придерживаясь предоставленной схемы JSON. Обратите особое внимание на зависимости между задачами, убедившись, что новая задача правильно ссылается на все задачи, от которых она зависит.\n\n" +
+				'При определении зависимостей для новой задачи следуйте этим принципам:\n' +
+				'1. Выбирайте зависимости на основе логических требований — что должно быть завершено до того, как эта задача может начаться.\n' +
+				'2. Отдавайте предпочтение зависимостям задач, которые семантически связаны с создаваемой функциональностью.\n' +
+				'3. Учитывайте как прямые зависимости (непосредственно предшествующие), так и косвенные зависимости.\n' +
+				'4. Избегайте добавления ненужных зависимостей — включайте только те задачи, которые действительно являются предварительными условиями.\n' +
+				'5. Учитывайте текущий статус задач — по возможности предпочитайте завершенные задачи в качестве зависимостей.\n' +
+				"6. Обратите особое внимание на основополагающие задачи (1-5), но не включайте их автоматически без причины.\n" +
+				'7. Недавние задачи (с более высокими номерами ID) могут быть более релевантными для новой функциональности.\n\n' +
+				'Массив зависимостей должен содержать идентификаторы задач (числа) предварительных задач.\n';
 
 			// Task Structure Description (for user prompt)
 			const taskStructureDesc = `
       {
-        "title": "Task title goes here",
-        "description": "A concise one or two sentence description of what the task involves",
-    "details": "Detailed implementation steps, considerations, code examples, or technical approach",
-    "testStrategy": "Specific steps to verify correct implementation and functionality",
-    "dependencies": [1, 3] // Example: IDs of tasks that must be completed before this task
+        "title": "Заголовок задачи идет здесь",
+        "description": "Краткое описание задачи в одном или двух предложениях",
+    "details": "Подробные шаги реализации, соображения, примеры кода или технический подход",
+    "testStrategy": "Конкретные шаги для проверки правильности реализации и функциональности",
+    "dependencies": [1, 3] // Пример: идентификаторы задач, которые должны быть выполнены до этой задачи
   }
 `;
 
 			// Add any manually provided details to the prompt for context
 			let contextFromArgs = '';
 			if (manualTaskData?.title)
-				contextFromArgs += `\n- Suggested Title: "${manualTaskData.title}"`;
+				contextFromArgs += `\n- Предлагаемый заголовок: "${manualTaskData.title}"`;
 			if (manualTaskData?.description)
-				contextFromArgs += `\n- Suggested Description: "${manualTaskData.description}"`;
+				contextFromArgs += `\n- Предлагаемое описание: "${manualTaskData.description}"`;
 			if (manualTaskData?.details)
-				contextFromArgs += `\n- Additional Details Context: "${manualTaskData.details}"`;
+				contextFromArgs += `\n- Дополнительный контекст деталей: "${manualTaskData.details}"`;
 			if (manualTaskData?.testStrategy)
-				contextFromArgs += `\n- Additional Test Strategy Context: "${manualTaskData.testStrategy}"`;
+				contextFromArgs += `\n- Дополнительный контекст стратегии тестирования: "${manualTaskData.testStrategy}"`;
 
 			// User Prompt
-			const userPrompt = `You are generating the details for Task #${newTaskId}. Based on the user's request: "${prompt}", create a comprehensive new task for a software development project.
+			const userPrompt = `Вы генерируете детали для Задачи #${newTaskId}. На основе запроса пользователя: "${prompt}", создайте комплексную новую задачу для проекта по разработке программного обеспечения.
       
       ${gatheredContext}
       
-      Based on the information about existing tasks provided above, include appropriate dependencies in the "dependencies" array. Only include task IDs that this new task directly depends on.
+      На основе информации о существующих задачах, предоставленной выше, включите соответствующие зависимости в массив "dependencies". Включайте только идентификаторы задач, от которых эта новая задача напрямую зависит.
       
-      Return your answer as a single JSON object matching the schema precisely:
+      Верните свой ответ в виде одного объекта JSON, точно соответствующего схеме:
       ${taskStructureDesc}
       
-      Make sure the details and test strategy are comprehensive and specific. DO NOT include the task ID in the title.
+      Убедитесь, что детали и стратегия тестирования являются исчерпывающими и конкретными. НЕ включайте идентификатор задачи в заголовок.
       `;
 
 			// Start the loading indicator - only for text mode
 			if (outputFormat === 'text') {
 				loadingIndicator = startLoadingIndicator(
-					`Generating new task with ${useResearch ? 'Research' : 'Main'} AI... \n`
+					`Генерация новой задачи с помощью ${useResearch ? 'Исследовательского' : 'Основного'} AI... \n`
 				);
 			}
 
 			try {
 				const serviceRole = useResearch ? 'research' : 'main';
-				report('DEBUG: Calling generateObjectService...', 'debug');
+				report('DEBUG: Вызов generateObjectService...', 'debug');
 
 				aiServiceResponse = await generateObjectService({
 					// Capture the full response
@@ -449,11 +449,11 @@ async function addTask(
 					commandName: commandName || 'add-task', // Use passed commandName or default
 					outputType: outputType || (isMCP ? 'mcp' : 'cli') // Use passed outputType or derive
 				});
-				report('DEBUG: generateObjectService returned successfully.', 'debug');
+				report('DEBUG: generateObjectService успешно вернулся.', 'debug');
 
 				if (!aiServiceResponse || !aiServiceResponse.mainResult) {
 					throw new Error(
-						'AI service did not return the expected object structure.'
+						'Сервис AI не вернул ожидаемую структуру объекта.'
 					);
 				}
 
@@ -470,33 +470,33 @@ async function addTask(
 				) {
 					taskData = aiServiceResponse.mainResult.object;
 				} else {
-					throw new Error('AI service did not return a valid task object.');
+					throw new Error('Сервис AI не вернул действительный объект задачи.');
 				}
 
-				report('Successfully generated task data from AI.', 'success');
+				report('Успешно сгенерированы данные задачи от AI.', 'success');
 
 				// Success! Show checkmark
 				if (loadingIndicator) {
 					succeedLoadingIndicator(
 						loadingIndicator,
-						'Task generated successfully'
+						'Задача успешно сгенерирована'
 					);
 					loadingIndicator = null; // Clear it
 				}
 			} catch (error) {
 				// Failure! Show X
 				if (loadingIndicator) {
-					failLoadingIndicator(loadingIndicator, 'AI generation failed');
+					failLoadingIndicator(loadingIndicator, 'Ошибка генерации AI');
 					loadingIndicator = null;
 				}
 				report(
-					`DEBUG: generateObjectService caught error: ${error.message}`,
+					`DEBUG: generateObjectService перехватил ошибку: ${error.message}`,
 					'debug'
 				);
-				report(`Error generating task with AI: ${error.message}`, 'error');
+				report(`Ошибка при генерации задачи с помощью AI: ${error.message}`, 'error');
 				throw error; // Re-throw error after logging
 			} finally {
-				report('DEBUG: generateObjectService finally block reached.', 'debug');
+				report('DEBUG: Блок finally в generateObjectService достигнут.', 'debug');
 				// Clean up if somehow still running
 				if (loadingIndicator) {
 					stopLoadingIndicator(loadingIndicator);
@@ -531,7 +531,7 @@ async function addTask(
 
 			if (!allValidDeps) {
 				report(
-					'AI suggested invalid dependencies. Filtering them out...',
+					'AI предложил неверные зависимости. Фильтрация их...',
 					'warn'
 				);
 				newTask.dependencies = taskData.dependencies.filter((depId) => {
@@ -547,14 +547,14 @@ async function addTask(
 		rawData[targetTag].tasks.push(newTask);
 		// Update the tag's metadata
 		ensureTagMetadata(rawData[targetTag], {
-			description: `Tasks for ${targetTag} context`
+			description: `Задачи для контекста ${targetTag}`
 		});
 
-		report('DEBUG: Writing tasks.json...', 'debug');
+		report('DEBUG: Запись tasks.json...', 'debug');
 		// Write the updated raw data back to the file
 		// The writeJSON function will automatically filter out _rawTaggedData
 		writeJSON(tasksPath, rawData);
-		report('DEBUG: tasks.json written.', 'debug');
+		report('DEBUG: tasks.json записан.', 'debug');
 
 		// Generate markdown task files
 		// report('Generating task files...', 'info');
@@ -571,8 +571,8 @@ async function addTask(
 			const table = new Table({
 				head: [
 					chalk.cyan.bold('ID'),
-					chalk.cyan.bold('Title'),
-					chalk.cyan.bold('Description')
+					chalk.cyan.bold('Заголовок'),
+					chalk.cyan.bold('Описание')
 				],
 				colWidths: [5, 30, 50] // Adjust widths as needed
 			});
@@ -583,7 +583,7 @@ async function addTask(
 				truncate(newTask.description, 47)
 			]);
 
-			console.log(chalk.green('✓ New task created successfully:'));
+			console.log(chalk.green('✓ Новая задача успешно создана:'));
 			console.log(table.toString());
 
 			// Helper to get priority color
@@ -620,27 +620,27 @@ async function addTask(
 			// Prepare dependency display string
 			let dependencyDisplay = '';
 			if (newTask.dependencies.length > 0) {
-				dependencyDisplay = chalk.white('Dependencies:') + '\n';
+				dependencyDisplay = chalk.white('Зависимости:') + '\n';
 				newTask.dependencies.forEach((dep) => {
 					const isAiAdded = aiAddedDeps.includes(dep);
-					const depType = isAiAdded ? chalk.yellow(' (AI suggested)') : '';
+					const depType = isAiAdded ? chalk.yellow(' (предложено AI)') : '';
 					dependencyDisplay +=
 						chalk.white(
-							`  - ${dep}: ${depTitles[dep] || 'Unknown task'}${depType}`
+							`  - ${dep}: ${depTitles[dep] || 'Неизвестная задача'}${depType}`
 						) + '\n';
 				});
 			} else {
-				dependencyDisplay = chalk.white('Dependencies: None') + '\n';
+				dependencyDisplay = chalk.white('Зависимости: Нет') + '\n';
 			}
 
 			// Add info about removed dependencies if any
 			if (aiRemovedDeps.length > 0) {
 				dependencyDisplay +=
-					chalk.gray('\nUser-specified dependencies that were not used:') +
+					chalk.gray('\nПользовательские зависимости, которые не были использованы:') +
 					'\n';
 				aiRemovedDeps.forEach((dep) => {
 					const depTask = allTasks.find((t) => t.id === dep);
-					const title = depTask ? truncate(depTask.title, 30) : 'Unknown task';
+					const title = depTask ? truncate(depTask.title, 30) : 'Неизвестная задача';
 					dependencyDisplay += chalk.gray(`  - ${dep}: ${title}`) + '\n';
 				});
 			}
@@ -649,17 +649,17 @@ async function addTask(
 			let dependencyAnalysis = '';
 			if (aiAddedDeps.length > 0 || aiRemovedDeps.length > 0) {
 				dependencyAnalysis =
-					'\n' + chalk.white.bold('Dependency Analysis:') + '\n';
+					'\n' + chalk.white.bold('Анализ зависимостей:') + '\n';
 				if (aiAddedDeps.length > 0) {
 					dependencyAnalysis +=
 						chalk.green(
-							`AI identified ${aiAddedDeps.length} additional dependencies`
+							`AI определил ${aiAddedDeps.length} дополнительных зависимостей`
 						) + '\n';
 				}
 				if (aiRemovedDeps.length > 0) {
 					dependencyAnalysis +=
 						chalk.yellow(
-							`AI excluded ${aiRemovedDeps.length} user-provided dependencies`
+							`AI исключил ${aiRemovedDeps.length} предоставленных пользователем зависимостей`
 						) + '\n';
 				}
 			}
@@ -667,31 +667,31 @@ async function addTask(
 			// Show success message box
 			console.log(
 				boxen(
-					chalk.white.bold(`Task ${newTaskId} Created Successfully`) +
+					chalk.white.bold(`Задача ${newTaskId} успешно создана`) +
 						'\n\n' +
-						chalk.white(`Title: ${newTask.title}`) +
+						chalk.white(`Заголовок: ${newTask.title}`) +
 						'\n' +
-						chalk.white(`Status: ${getStatusWithColor(newTask.status)}`) +
+						chalk.white(`Статус: ${getStatusWithColor(newTask.status)}`) +
 						'\n' +
 						chalk.white(
-							`Priority: ${chalk[getPriorityColor(newTask.priority)](newTask.priority)}`
+							`Приоритет: ${chalk[getPriorityColor(newTask.priority)](newTask.priority)}`
 						) +
 						'\n\n' +
 						dependencyDisplay +
 						dependencyAnalysis +
 						'\n' +
-						chalk.white.bold('Next Steps:') +
+						chalk.white.bold('Следующие шаги:') +
 						'\n' +
 						chalk.cyan(
-							`1. Run ${chalk.yellow(`task-master show ${newTaskId}`)} to see complete task details`
+							`1. Выполните ${chalk.yellow(`task-master show ${newTaskId}`)}, чтобы увидеть полные детали задачи`
 						) +
 						'\n' +
 						chalk.cyan(
-							`2. Run ${chalk.yellow(`task-master set-status --id=${newTaskId} --status=in-progress`)} to start working on it`
+							`2. Выполните ${chalk.yellow(`task-master set-status --id=${newTaskId} --status=in-progress`)}, чтобы начать работу над ней`
 						) +
 						'\n' +
 						chalk.cyan(
-							`3. Run ${chalk.yellow(`task-master expand --id=${newTaskId}`)} to break it down into subtasks`
+							`3. Выполните ${chalk.yellow(`task-master expand --id=${newTaskId}`)}, чтобы разбить ее на подзадачи`
 						),
 					{ padding: 1, borderColor: 'green', borderStyle: 'round' }
 				)
@@ -708,7 +708,7 @@ async function addTask(
 		}
 
 		report(
-			`DEBUG: Returning new task ID: ${newTaskId} and telemetry.`,
+			`DEBUG: Возвращение ID новой задачи: ${newTaskId} и телеметрии.`,
 			'debug'
 		);
 		return {
@@ -722,9 +722,9 @@ async function addTask(
 			stopLoadingIndicator(loadingIndicator);
 		}
 
-		report(`Error adding task: ${error.message}`, 'error');
+		report(`Ошибка при добавлении задачи: ${error.message}`, 'error');
 		if (outputFormat === 'text') {
-			console.error(chalk.red(`Error: ${error.message}`));
+			console.error(chalk.red(`Ошибка: ${error.message}`));
 		}
 		// In MCP mode, we let the direct function handler catch and format
 		throw error;

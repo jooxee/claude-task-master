@@ -19,18 +19,18 @@ async function removeSubtask(
 	context = {}
 ) {
 	try {
-		log('info', `Removing subtask ${subtaskId}...`);
+		log('info', `Удаление подзадачи ${subtaskId}...`);
 
 		// Read the existing tasks with proper context
 		const data = readJSON(tasksPath, context.projectRoot, context.tag);
 		if (!data || !data.tasks) {
-			throw new Error(`Invalid or missing tasks file at ${tasksPath}`);
+			throw new Error(`Неверный или отсутствующий файл задач по адресу ${tasksPath}`);
 		}
 
 		// Parse the subtask ID (format: "parentId.subtaskId")
 		if (!subtaskId.includes('.')) {
 			throw new Error(
-				`Invalid subtask ID format: ${subtaskId}. Expected format: "parentId.subtaskId"`
+				`Неверный формат ID подзадачи: ${subtaskId}. Ожидаемый формат: "parentId.subtaskId"`
 			);
 		}
 
@@ -41,12 +41,12 @@ async function removeSubtask(
 		// Find the parent task
 		const parentTask = data.tasks.find((t) => t.id === parentId);
 		if (!parentTask) {
-			throw new Error(`Parent task with ID ${parentId} not found`);
+			throw new Error(`Родительская задача с ID ${parentId} не найдена`);
 		}
 
 		// Check if parent has subtasks
 		if (!parentTask.subtasks || parentTask.subtasks.length === 0) {
-			throw new Error(`Parent task ${parentId} has no subtasks`);
+			throw new Error(`Родительская задача ${parentId} не имеет подзадач`);
 		}
 
 		// Find the subtask to remove
@@ -54,7 +54,7 @@ async function removeSubtask(
 			(st) => st.id === subtaskIdNum
 		);
 		if (subtaskIndex === -1) {
-			throw new Error(`Subtask ${subtaskId} not found`);
+			throw new Error(`Подзадача ${subtaskId} не найдена`);
 		}
 
 		// Get a copy of the subtask before removing it
@@ -72,7 +72,7 @@ async function removeSubtask(
 
 		// Convert the subtask to a standalone task if requested
 		if (convertToTask) {
-			log('info', `Converting subtask ${subtaskId} to a standalone task...`);
+			log('info', `Преобразование подзадачи ${subtaskId} в отдельную задачу...`);
 
 			// Find the highest task ID to determine the next ID
 			const highestId = Math.max(...data.tasks.map((t) => t.id));
@@ -97,9 +97,9 @@ async function removeSubtask(
 			// Add the converted task to the tasks array
 			data.tasks.push(convertedTask);
 
-			log('info', `Created new task ${newTaskId} from subtask ${subtaskId}`);
+			log('info', `Создана новая задача ${newTaskId} из подзадачи ${subtaskId}`);
 		} else {
-			log('info', `Subtask ${subtaskId} deleted`);
+			log('info', `Подзадача ${subtaskId} удалена`);
 		}
 
 		// Write the updated tasks back to the file with proper context
@@ -107,13 +107,13 @@ async function removeSubtask(
 
 		// Generate task files if requested
 		if (generateFiles) {
-			log('info', 'Regenerating task files...');
+			log('info', 'Повторное создание файлов задач...');
 			// await generateTaskFiles(tasksPath, path.dirname(tasksPath), context);
 		}
 
 		return convertedTask;
 	} catch (error) {
-		log('error', `Error removing subtask: ${error.message}`);
+		log('error', `Ошибка удаления подзадачи: ${error.message}`);
 		throw error;
 	}
 }

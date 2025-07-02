@@ -55,28 +55,28 @@ async function createTag(
 	try {
 		// Validate tag name
 		if (!tagName || typeof tagName !== 'string') {
-			throw new Error('Tag name is required and must be a string');
+			throw new Error('Имя тега обязательно и должно быть строкой');
 		}
 
 		// Validate tag name format (alphanumeric, hyphens, underscores only)
 		if (!/^[a-zA-Z0-9_-]+$/.test(tagName)) {
 			throw new Error(
-				'Tag name can only contain letters, numbers, hyphens, and underscores'
+				'Имя тега может содержать только буквы, цифры, дефисы и подчеркивания'
 			);
 		}
 
 		// Reserved tag names
 		const reservedNames = ['master', 'main', 'default'];
 		if (reservedNames.includes(tagName.toLowerCase())) {
-			throw new Error(`"${tagName}" is a reserved tag name`);
+			throw new Error(`"${tagName}" является зарезервированным именем тега`);
 		}
 
-		logFn.info(`Creating new tag: ${tagName}`);
+		logFn.info(`Создание нового тега: ${tagName}`);
 
 		// Read current tasks data
 		const data = readJSON(tasksPath, projectRoot);
 		if (!data) {
-			throw new Error(`Could not read tasks file at ${tasksPath}`);
+			throw new Error(`Не удалось прочитать файл задач по адресу ${tasksPath}`);
 		}
 
 		// Use raw tagged data for tag operations - ensure we get the actual tagged structure
@@ -108,7 +108,7 @@ async function createTag(
 
 		// Check if tag already exists
 		if (rawData[tagName]) {
-			throw new Error(`Tag "${tagName}" already exists`);
+			throw new Error(`Тег "${tagName}" уже существует`);
 		}
 
 		// Determine source for copying tasks (only if explicitly requested)
@@ -121,9 +121,9 @@ async function createTag(
 				logFn.warn(`Source tag "${copyFromTag}" not found or has no tasks`);
 			}
 
-			logFn.info(`Copying ${sourceTasks.length} tasks from tag "${sourceTag}"`);
+			logFn.info(`Копирование ${sourceTasks.length} задач из тега "${sourceTag}"`);
 		} else {
-			logFn.info('Creating empty tag (no tasks copied)');
+			logFn.info('Создание пустого тега (задачи не скопированы)');
 		}
 
 		// Create the new tag structure in raw data
@@ -148,7 +148,7 @@ async function createTag(
 		// Write the clean data back to file
 		writeJSON(tasksPath, cleanData);
 
-		logFn.success(`Successfully created tag "${tagName}"`);
+		logFn.success(`Тег "${tagName}" успешно создан`);
 
 		// For JSON output, return structured data
 		if (outputFormat === 'json') {
@@ -198,7 +198,7 @@ async function createTag(
 				description || `Tag created on ${new Date().toLocaleDateString()}`
 		};
 	} catch (error) {
-		logFn.error(`Error creating tag: ${error.message}`);
+		logFn.error(`Ошибка создания тега: ${error.message}`);
 		throw error;
 	}
 }
@@ -237,20 +237,20 @@ async function deleteTag(
 	try {
 		// Validate tag name
 		if (!tagName || typeof tagName !== 'string') {
-			throw new Error('Tag name is required and must be a string');
+			throw new Error('Имя тега обязательно и должно быть строкой');
 		}
 
 		// Prevent deletion of master tag
 		if (tagName === 'master') {
-			throw new Error('Cannot delete the "master" tag');
+			throw new Error('Невозможно удалить тег "master"');
 		}
 
-		logFn.info(`Deleting tag: ${tagName}`);
+		logFn.info(`Удаление тега: ${tagName}`);
 
 		// Read current tasks data
 		const data = readJSON(tasksPath, projectRoot);
 		if (!data) {
-			throw new Error(`Could not read tasks file at ${tasksPath}`);
+			throw new Error(`Не удалось прочитать файл задач по адресу ${tasksPath}`);
 		}
 
 		// Use raw tagged data for tag operations - ensure we get the actual tagged structure
@@ -297,10 +297,10 @@ async function deleteTag(
 		if (!yes && taskCount > 0 && outputFormat === 'text') {
 			console.log(
 				boxen(
-					chalk.yellow.bold('⚠ WARNING: Tag Deletion') +
-						`\n\nYou are about to delete tag "${chalk.cyan(tagName)}"` +
-						`\nThis will permanently delete ${chalk.red.bold(taskCount)} tasks` +
-						'\n\nThis action cannot be undone!',
+					chalk.yellow.bold('⚠ ПРЕДУПРЕЖДЕНИЕ: Удаление тега') +
+						`\n\nВы собираетесь удалить тег "${chalk.cyan(tagName)}"` +
+						`\nЭто навсегда удалит ${chalk.red.bold(taskCount)} задач` +
+						'\n\nЭто действие нельзя отменить!',
 					{
 						padding: 1,
 						borderColor: 'yellow',
@@ -315,13 +315,13 @@ async function deleteTag(
 				{
 					type: 'confirm',
 					name: 'proceed',
-					message: `Are you sure you want to delete tag "${tagName}" and its ${taskCount} tasks?`,
+					message: `Вы уверены, что хотите удалить тег "${tagName}" и его ${taskCount} задач?`,
 					default: false
 				}
 			]);
 
 			if (!firstConfirm.proceed) {
-				logFn.info('Tag deletion cancelled by user');
+				logFn.info('Удаление тега отменено пользователем');
 				throw new Error('Tag deletion cancelled');
 			}
 
@@ -341,11 +341,11 @@ async function deleteTag(
 			]);
 
 			if (secondConfirm.tagNameConfirm !== tagName) {
-				logFn.info('Tag deletion cancelled - incorrect tag name confirmation');
+				logFn.info('Удаление тега отменено - неверное подтверждение имени тега');
 				throw new Error('Tag deletion cancelled');
 			}
 
-			logFn.info('Double confirmation received, proceeding with deletion...');
+			logFn.info('Получено двойное подтверждение, продолжение удаления...');
 		}
 
 		// Delete the tag
@@ -354,7 +354,7 @@ async function deleteTag(
 		// If we're deleting the current tag, switch to master
 		if (isCurrentTag) {
 			await switchCurrentTag(projectRoot, 'master');
-			logFn.info('Switched current tag to "master"');
+			logFn.info('Текущий тег переключен на "master"');
 		}
 
 		// Create clean data for writing (exclude _rawTaggedData to prevent corruption)
@@ -368,7 +368,7 @@ async function deleteTag(
 		// Write the clean data back to file
 		writeJSON(tasksPath, cleanData);
 
-		logFn.success(`Successfully deleted tag "${tagName}"`);
+		logFn.success(`Тег "${tagName}" успешно удален`);
 
 		// For JSON output, return structured data
 		if (outputFormat === 'json') {
@@ -385,11 +385,15 @@ async function deleteTag(
 		if (outputFormat === 'text') {
 			console.log(
 				boxen(
-					chalk.red.bold('✓ Tag Deleted Successfully') +
-						`\n\nTag Name: ${chalk.cyan(tagName)}` +
-						`\nTasks Deleted: ${chalk.yellow(taskCount)}` +
+					chalk.red.bold('✓ Тег успешно удален') +
+						`
+
+Имя тега: ${chalk.cyan(tagName)}` +
+						`
+Удалено задач: ${chalk.yellow(taskCount)}` +
 						(isCurrentTag
-							? `\n${chalk.yellow('⚠ Switched current tag to "master"')}`
+							? `
+${chalk.yellow('⚠ Текущий тег переключен на "master"')}`
 							: ''),
 					{
 						padding: 1,
@@ -409,7 +413,7 @@ async function deleteTag(
 			switchedToMaster: isCurrentTag
 		};
 	} catch (error) {
-		logFn.error(`Error deleting tag: ${error.message}`);
+		logFn.error(`Ошибка удаления тега: ${error.message}`);
 		throw error;
 	}
 }
@@ -534,7 +538,7 @@ async function tags(
 		// Read current tasks data
 		const data = readJSON(tasksPath, projectRoot);
 		if (!data) {
-			throw new Error(`Could not read tasks file at ${tasksPath}`);
+			throw new Error(`Не удалось прочитать файл задач по адресу ${tasksPath}`);
 		}
 
 		// Get current tag
@@ -710,15 +714,15 @@ async function useTag(
 	try {
 		// Validate tag name
 		if (!tagName || typeof tagName !== 'string') {
-			throw new Error('Tag name is required and must be a string');
+			throw new Error('Имя тега обязательно и должно быть строкой');
 		}
 
-		logFn.info(`Switching to tag: ${tagName}`);
+		logFn.info(`Переключение на тег: ${tagName}`);
 
 		// Read current tasks data to verify tag exists
 		const data = readJSON(tasksPath, projectRoot);
 		if (!data) {
-			throw new Error(`Could not read tasks file at ${tasksPath}`);
+			throw new Error(`Не удалось прочитать файл задач по адресу ${tasksPath}`);
 		}
 
 		// Use raw tagged data to check if tag exists
@@ -853,12 +857,12 @@ async function renameTag(
 			throw new Error(`"${newName}" is a reserved tag name`);
 		}
 
-		logFn.info(`Renaming tag from "${oldName}" to "${newName}"`);
+		logFn.info(`Переименование тега из "${oldName}" в "${newName}"`);
 
 		// Read current tasks data
 		const data = readJSON(tasksPath, projectRoot);
 		if (!data) {
-			throw new Error(`Could not read tasks file at ${tasksPath}`);
+			throw new Error(`Не удалось прочитать файл задач по адресу ${tasksPath}`);
 		}
 
 		// Use raw tagged data for tag operations
@@ -1019,7 +1023,7 @@ async function copyTag(
 		// Read current tasks data
 		const data = readJSON(tasksPath, projectRoot);
 		if (!data) {
-			throw new Error(`Could not read tasks file at ${tasksPath}`);
+			throw new Error(`Не удалось прочитать файл задач по адресу ${tasksPath}`);
 		}
 
 		// Use raw tagged data for tag operations
@@ -1146,7 +1150,7 @@ async function switchCurrentTag(projectRoot, tagName) {
 		// Write updated state
 		fs.writeFileSync(statePath, JSON.stringify(state, null, 2), 'utf8');
 	} catch (error) {
-		log('warn', `Could not update current tag in state.json: ${error.message}`);
+		log('warn', `Не удалось обновить текущий тег в state.json: ${error.message}`);
 		// Don't throw - this is not critical for tag operations
 	}
 }
@@ -1180,7 +1184,7 @@ async function updateBranchTagMapping(projectRoot, branchName, tagName) {
 		// Write updated state
 		fs.writeFileSync(statePath, JSON.stringify(state, null, 2), 'utf8');
 	} catch (error) {
-		log('warn', `Could not update branch-tag mapping: ${error.message}`);
+		log('warn', `Не удалось обновить сопоставление ветки и тега: ${error.message}`);
 		// Don't throw - this is not critical for tag operations
 	}
 }
@@ -1250,20 +1254,20 @@ async function createTagFromBranch(
 	try {
 		// Validate branch name
 		if (!branchName || typeof branchName !== 'string') {
-			throw new Error('Branch name is required and must be a string');
+			throw new Error('Имя ветки обязательно и должно быть строкой');
 		}
 
 		// Check if branch name is valid for tag creation
 		if (!isValidBranchForTag(branchName)) {
 			throw new Error(
-				`Branch "${branchName}" cannot be converted to a valid tag name`
+				`Ветвь "${branchName}" не может быть преобразована в действительное имя тега`
 			);
 		}
 
 		// Sanitize branch name to create tag name
 		const tagName = sanitizeBranchNameForTag(branchName);
 
-		logFn.info(`Creating tag "${tagName}" from git branch "${branchName}"`);
+		logFn.info(`Создание тега "${tagName}" из ветки git "${branchName}"`);
 
 		// Create the tag using existing createTag function
 		const createResult = await createTag(
@@ -1281,12 +1285,12 @@ async function createTagFromBranch(
 
 		// Update branch-tag mapping
 		await updateBranchTagMapping(projectRoot, branchName, tagName);
-		logFn.info(`Updated branch-tag mapping: ${branchName} -> ${tagName}`);
+		logFn.info(`Обновлено сопоставление ветки и тега: ${branchName} -> ${tagName}`);
 
 		// Auto-switch to the new tag if requested
 		if (autoSwitch) {
 			await switchCurrentTag(projectRoot, tagName);
-			logFn.info(`Automatically switched to tag "${tagName}"`);
+			logFn.info(`Автоматически переключено на тег "${tagName}"`);
 		}
 
 		// For JSON output, return structured data
@@ -1309,7 +1313,7 @@ async function createTagFromBranch(
 			autoSwitched: autoSwitch || false
 		};
 	} catch (error) {
-		logFn.error(`Error creating tag from branch: ${error.message}`);
+		logFn.error(`Ошибка создания тега из ветки: ${error.message}`);
 		throw error;
 	}
 }
@@ -1355,22 +1359,22 @@ async function autoSwitchTagForBranch(
 	try {
 		// Check if we're in a git repository
 		if (!(await isGitRepository(projectRoot))) {
-			logFn.warn('Not in a git repository, cannot auto-switch tags');
+			logFn.warn('Не в репозитории git, невозможно автоматически переключать теги');
 			return { switched: false, reason: 'not_git_repo' };
 		}
 
 		// Get current git branch
 		const currentBranch = await getCurrentBranch(projectRoot);
 		if (!currentBranch) {
-			logFn.warn('Could not determine current git branch');
+			logFn.warn('Не удалось определить текущую ветку git');
 			return { switched: false, reason: 'no_current_branch' };
 		}
 
-		logFn.info(`Current git branch: ${currentBranch}`);
+		logFn.info(`Текущая ветка git: ${currentBranch}`);
 
 		// Check if branch is valid for tag creation
 		if (!isValidBranchForTag(currentBranch)) {
-			logFn.info(`Branch "${currentBranch}" is not suitable for tag creation`);
+			logFn.info(`Ветвь "${currentBranch}" не подходит для создания тега`);
 			return {
 				switched: false,
 				reason: 'invalid_branch_for_tag',
@@ -1393,7 +1397,7 @@ async function autoSwitchTagForBranch(
 
 		if (!tagExists && createIfMissing) {
 			// Create the tag from branch
-			logFn.info(`Creating new tag "${tagName}" for branch "${currentBranch}"`);
+			logFn.info(`Создание нового тега "${tagName}" для ветки "${currentBranch}"`);
 
 			const createResult = await createTagFromBranch(
 				tasksPath,
@@ -1416,7 +1420,7 @@ async function autoSwitchTagForBranch(
 		} else if (tagExists) {
 			// Tag exists, switch to it
 			logFn.info(
-				`Switching to existing tag "${tagName}" for branch "${currentBranch}"`
+				`Переключение на существующий тег "${tagName}" для ветки "${currentBranch}"`
 			);
 
 			const switchResult = await useTag(
@@ -1442,7 +1446,7 @@ async function autoSwitchTagForBranch(
 		} else {
 			// Tag doesn't exist and createIfMissing is false
 			logFn.warn(
-				`Tag "${tagName}" for branch "${currentBranch}" does not exist`
+				`Тег "${tagName}" для ветки "${currentBranch}" не существует`
 			);
 			return {
 				switched: false,
@@ -1452,7 +1456,7 @@ async function autoSwitchTagForBranch(
 			};
 		}
 	} catch (error) {
-		logFn.error(`Error in auto-switch tag for branch: ${error.message}`);
+		logFn.error(`Ошибка при автоматическом переключении тега для ветки: ${error.message}`);
 		throw error;
 	}
 }

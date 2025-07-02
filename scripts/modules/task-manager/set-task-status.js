@@ -39,7 +39,7 @@ async function setTaskStatus(
 	try {
 		if (!isValidTaskStatus(newStatus)) {
 			throw new Error(
-				`Error: Invalid status value: ${newStatus}. Use one of: ${TASK_STATUS_OPTIONS.join(', ')}`
+				`Ошибка: Неверное значение статуса: ${newStatus}. Используйте одно из: ${TASK_STATUS_OPTIONS.join(', ')}`
 			);
 		}
 		// Determine if we're in MCP mode by checking for mcpLog
@@ -48,7 +48,7 @@ async function setTaskStatus(
 		// Only display UI elements if not in MCP mode
 		if (!isMcpMode) {
 			console.log(
-				boxen(chalk.white.bold(`Updating Task Status to: ${newStatus}`), {
+				boxen(chalk.white.bold(`Обновление статуса задачи на: ${newStatus}`), {
 					padding: 1,
 					borderColor: 'blue',
 					borderStyle: 'round'
@@ -56,7 +56,7 @@ async function setTaskStatus(
 			);
 		}
 
-		log('info', `Reading tasks from ${tasksPath}...`);
+		log('info', `Чтение задач из ${tasksPath}...`);
 
 		// Read the raw data without tag resolution to preserve tagged structure
 		let rawData = readJSON(tasksPath, options.projectRoot); // No tag parameter
@@ -77,7 +77,7 @@ async function setTaskStatus(
 			!Array.isArray(rawData[currentTag].tasks)
 		) {
 			throw new Error(
-				`Invalid tasks file or tag "${currentTag}" not found at ${tasksPath}`
+				`Неверный файл задач или тег "${currentTag}" не найден по адресу ${tasksPath}`
 			);
 		}
 
@@ -89,7 +89,7 @@ async function setTaskStatus(
 		};
 
 		if (!data || !data.tasks) {
-			throw new Error(`No valid tasks found in ${tasksPath}`);
+			throw new Error(`Не найдено допустимых задач в ${tasksPath}`);
 		}
 
 		// Handle multiple task IDs (comma-separated)
@@ -135,7 +135,7 @@ async function setTaskStatus(
 		writeJSON(tasksPath, rawData);
 
 		// Validate dependencies after status update
-		log('info', 'Validating dependencies after status update...');
+		log('info', 'Проверка зависимостей после обновления статуса...');
 		validateTaskDependencies(data.tasks);
 
 		// Generate individual task files
@@ -151,10 +151,10 @@ async function setTaskStatus(
 
 				console.log(
 					boxen(
-						chalk.white.bold(`Successfully updated task ${id} status:`) +
-							'\n' +
-							`From: ${chalk.yellow(oldStatus)}\n` +
-							`To:   ${chalk.green(updatedStatus)}`,
+						chalk.white.bold(`Статус задачи ${id} успешно обновлен:`)+
+							'\n'+
+							`С: ${chalk.yellow(oldStatus)}\n`+
+							`На:   ${chalk.green(updatedStatus)}`,
 						{ padding: 1, borderColor: 'green', borderStyle: 'round' }
 					)
 				);
@@ -171,11 +171,11 @@ async function setTaskStatus(
 			}))
 		};
 	} catch (error) {
-		log('error', `Error setting task status: ${error.message}`);
+		log('error', `Ошибка установки статуса задачи: ${error.message}`);
 
 		// Only show error UI in CLI mode
 		if (!options?.mcpLog) {
-			console.error(chalk.red(`Error: ${error.message}`));
+			console.error(chalk.red(`Ошибка: ${error.message}`));
 
 			// Pass session to getDebugFlag
 			if (getDebugFlag(options?.session)) {

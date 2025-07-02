@@ -14,16 +14,16 @@ import { displayBanner } from '../ui.js';
  */
 function clearSubtasks(tasksPath, taskIds, context = {}) {
 	const { projectRoot, tag } = context;
-	log('info', `Reading tasks from ${tasksPath}...`);
+	log('info', `Чтение задач из ${tasksPath}...`);
 	const data = readJSON(tasksPath, projectRoot, tag);
 	if (!data || !data.tasks) {
-		log('error', 'No valid tasks found.');
+		log('error', 'Не найдено допустимых задач.');
 		process.exit(1);
 	}
 
 	if (!isSilentMode()) {
 		console.log(
-			boxen(chalk.white.bold('Clearing Subtasks'), {
+			boxen(chalk.white.bold('Очистка подзадач'), {
 				padding: 1,
 				borderColor: 'blue',
 				borderStyle: 'round',
@@ -39,9 +39,9 @@ function clearSubtasks(tasksPath, taskIds, context = {}) {
 	// Create a summary table for the cleared subtasks
 	const summaryTable = new Table({
 		head: [
-			chalk.cyan.bold('Task ID'),
-			chalk.cyan.bold('Task Title'),
-			chalk.cyan.bold('Subtasks Cleared')
+			chalk.cyan.bold('ID задачи'),
+			chalk.cyan.bold('Заголовок задачи'),
+			chalk.cyan.bold('Очищенные подзадачи')
 		],
 		colWidths: [10, 50, 20],
 		style: { head: [], border: [] }
@@ -50,22 +50,22 @@ function clearSubtasks(tasksPath, taskIds, context = {}) {
 	taskIdArray.forEach((taskId) => {
 		const id = parseInt(taskId, 10);
 		if (Number.isNaN(id)) {
-			log('error', `Invalid task ID: ${taskId}`);
+			log('error', `Неверный ID задачи: ${taskId}`);
 			return;
 		}
 
 		const task = data.tasks.find((t) => t.id === id);
 		if (!task) {
-			log('error', `Task ${id} not found`);
+			log('error', `Задача ${id} не найдена`);
 			return;
 		}
 
 		if (!task.subtasks || task.subtasks.length === 0) {
-			log('info', `Task ${id} has no subtasks to clear`);
+			log('info', `У задачи ${id} нет подзадач для очистки`);
 			summaryTable.push([
 				id.toString(),
 				truncate(task.title, 47),
-				chalk.yellow('No subtasks')
+				chalk.yellow('Нет подзадач')
 			]);
 			return;
 		}
@@ -73,12 +73,12 @@ function clearSubtasks(tasksPath, taskIds, context = {}) {
 		const subtaskCount = task.subtasks.length;
 		task.subtasks = [];
 		clearedCount++;
-		log('info', `Cleared ${subtaskCount} subtasks from task ${id}`);
+		log('info', `Очищено ${subtaskCount} подзадач из задачи ${id}`);
 
 		summaryTable.push([
 			id.toString(),
 			truncate(task.title, 47),
-			chalk.green(`${subtaskCount} subtasks cleared`)
+			chalk.green(`${subtaskCount} подзадач очищено`)
 		]);
 	});
 
@@ -88,7 +88,7 @@ function clearSubtasks(tasksPath, taskIds, context = {}) {
 		// Show summary table
 		if (!isSilentMode()) {
 			console.log(
-				boxen(chalk.white.bold('Subtask Clearing Summary:'), {
+				boxen(chalk.white.bold('Сводка по очистке подзадач:'), {
 					padding: { left: 2, right: 2, top: 0, bottom: 0 },
 					margin: { top: 1, bottom: 0 },
 					borderColor: 'blue',
@@ -103,7 +103,7 @@ function clearSubtasks(tasksPath, taskIds, context = {}) {
 			console.log(
 				boxen(
 					chalk.green(
-						`Successfully cleared subtasks from ${chalk.bold(clearedCount)} task(s)`
+						`Успешно очищены подзадачи из ${chalk.bold(clearedCount)} задач(и)`
 					),
 					{
 						padding: 1,
@@ -117,10 +117,10 @@ function clearSubtasks(tasksPath, taskIds, context = {}) {
 			// Next steps suggestion
 			console.log(
 				boxen(
-					chalk.white.bold('Next Steps:') +
+					chalk.white.bold('Следующие шаги:') +
 						'\n\n' +
-						`${chalk.cyan('1.')} Run ${chalk.yellow('task-master expand --id=<id>')} to generate new subtasks\n` +
-						`${chalk.cyan('2.')} Run ${chalk.yellow('task-master list --with-subtasks')} to verify changes`,
+						`${chalk.cyan('1.')} Выполните ${chalk.yellow('task-master expand --id=<id>')}, чтобы сгенерировать новые подзадачи\n` +
+						`${chalk.cyan('2.')} Выполните ${chalk.yellow('task-master list --with-subtasks')}, чтобы проверить изменения`,
 					{
 						padding: 1,
 						borderColor: 'cyan',
@@ -133,7 +133,7 @@ function clearSubtasks(tasksPath, taskIds, context = {}) {
 	} else {
 		if (!isSilentMode()) {
 			console.log(
-				boxen(chalk.yellow('No subtasks were cleared'), {
+				boxen(chalk.yellow('Ни одна подзадача не была очищена'), {
 					padding: 1,
 					borderColor: 'yellow',
 					borderStyle: 'round',
