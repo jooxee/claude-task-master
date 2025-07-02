@@ -388,8 +388,7 @@ ${contextString}
 			console.error(chalk.red(`Ошибка: ${error.message}`));
 			if (error.message?.includes('ANTHROPIC_API_KEY')) {
 				console.log(
-					chalk.yellow('
-Чтобы исправить эту проблему, установите свой ключ API Anthropic:')
+					chalk.yellow('Чтобы исправить эту проблему, установите свой ключ API Anthropic:')
 				);
 				console.log('  export ANTHROPIC_API_KEY=your_api_key_here');
 			} else if (error.message?.includes('PERPLEXITY_API_KEY')) {

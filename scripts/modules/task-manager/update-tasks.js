@@ -507,3 +507,5 @@ async function updateTasks(
 		// --- Конец общей обработки ошибок ---
 	}
 }
+
+export { updateTasks };
